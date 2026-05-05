@@ -1,0 +1,104 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include "ast.h"
+
+void storeEntry(SymbolTable *table, char variableName[], int valueToStore)
+{
+    Entry entry;
+    strncpy(entry.name, variableName, strlen(variableName));
+    entry.name[strlen(variableName)] = '\0';
+    entry.value = valueToStore;
+    table->entries[table->totalCount] = entry;
+    table->totalCount++;
+}
+
+Entry *findEntry(SymbolTable *table, char variableName[])
+{
+    for (int i = 0; i < table->totalCount; i++)
+    {
+        if (strcmp(table->entries[i].name, variableName) == 0)
+        {
+            return &table->entries[i];
+        }
+    }
+
+    return NULL;
+}
+
+int evaluator(ASTNode *ast, SymbolTable *table)
+{
+    if (ast == NULL)
+    {
+        return 0;
+    }
+
+    if (ast->type == NODE_LITERAL)
+    {
+        if (ast->data.token.type == TOKEN_INTEGER_LITERAL)
+        {
+            char buffer[100];
+            strncpy(buffer, ast->data.token.value.start, ast->data.token.value.length);
+            buffer[ast->data.token.value.length] = '\0';
+
+            return atoi(buffer);
+        }
+        if (ast->data.token.type == TOKEN_VARIABLE || ast->data.token.type == TOKEN_IDENTIFIER)
+        {
+            char name[100];
+
+            strncpy(name, ast->data.token.value.start, ast->data.token.value.length);
+            name[ast->data.token.value.length] = '\0';
+            Entry *entry = findEntry(table, name);
+
+            if (entry == NULL)
+            {
+                fprintf(stderr, "ERROR");
+                exit(1);
+            }
+
+            return entry->value;
+        }
+    }
+
+    if (ast->type == NODE_BINARY)
+    {
+        int left = evaluator(ast->data.binary.left, table);
+        int right = evaluator(ast->data.binary.right, table);
+        int operator = ast->data.binary.operator;
+
+        switch (operator)
+        {
+        case TOKEN_ADD:
+            return left + right;
+        case TOKEN_SUBTRACT:
+            return left - right;
+        case TOKEN_MULTIPLY:
+            return left * right;
+        case TOKEN_DIVIDE:
+            return left / right;
+        default:
+            break;
+        }
+    }
+
+    if (ast->type == NODE_DECLARATION)
+    {
+        int expression = evaluator(ast->data.declaration.expression, table);
+        char name[100];
+        strncpy(name, ast->data.declaration.name.value.start, ast->data.declaration.name.value.length);
+        name[ast->data.declaration.name.value.length] = '\0';
+        storeEntry(table, name, expression);
+        return 0;
+    }
+
+    if (ast->type == NODE_PRINT)
+    {
+        int expression = evaluator(ast->data.print.expression, table);
+        printf("%d\n", expression);
+        return 0;
+    }
+
+    return 0;
+}
