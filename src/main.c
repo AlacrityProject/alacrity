@@ -4,10 +4,13 @@
 
 int main()
 {
-    Keyword keywords[3] = {
+    Keyword keywords[6] = {
         {"variable", TOKEN_VARIABLE},
         {"print", TOKEN_PRINT},
         {"int", TOKEN_INT_TYPE},
+        {"if", TOKEN_IF},
+        {"else", TOKEN_ELSE},
+        {"elif", TOKEN_ELIF},
     };
     int numberOfKeywords = sizeof(keywords) / sizeof(keywords[0]);
 
@@ -30,7 +33,7 @@ int main()
         }
     }
 
-    SymbolTable table = {};
+    SymbolTable table = {0};
 
     // Parser Initialization
     Parser parser;

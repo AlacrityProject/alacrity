@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <ctype.h>
 #include "ast.h"
 
@@ -44,7 +45,7 @@ int evaluator(ASTNode *ast, SymbolTable *table)
 
             return atoi(buffer);
         }
-        if (ast->data.token.type == TOKEN_VARIABLE || ast->data.token.type == TOKEN_IDENTIFIER)
+        if (ast->data.token.type == TOKEN_VARIABLE)
         {
             char name[100];
 
@@ -78,6 +79,15 @@ int evaluator(ASTNode *ast, SymbolTable *table)
             return left * right;
         case TOKEN_DIVIDE:
             return left / right;
+        case TOKEN_EQUAL_EQUAL:
+            if (left == right)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         default:
             break;
         }
@@ -97,6 +107,22 @@ int evaluator(ASTNode *ast, SymbolTable *table)
     {
         int expression = evaluator(ast->data.print.expression, table);
         printf("%d\n", expression);
+        return 0;
+    }
+
+    if (ast->type == NODE_IF_ELSE)
+    {
+        int expression = evaluator(ast->data.ifElse.expression, table);
+
+        if (expression == true)
+        {
+            evaluator(ast->data.ifElse.ifBody, table);
+        }
+        else if (ast->data.ifElse.elseBody != NULL)
+        {
+            evaluator(ast->data.ifElse.elseBody, table);
+        }
+
         return 0;
     }
 

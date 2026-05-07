@@ -50,6 +50,10 @@ struct AstNode *parseStatement(Parser *parser)
     {
         return parsePrint(parser);
     }
+    else if (currentToken.type == TOKEN_IF)
+    {
+        return parseIfElse(parser);
+    }
     else
     {
         fprintf(stderr, "ERROR");
@@ -84,7 +88,7 @@ struct AstNode *parseExpression(Parser *parser, int minimumBindingPower)
         {
             Token operatorToken = advance(parser);
             int operatorPrecendence = getTokenPrecedence(operatorToken.type);
-            struct AstNode *right = parseExpression(parser, getTokenPrecedence(operatorPrecendence));
+            struct AstNode *right = parseExpression(parser, operatorPrecendence);
             left = makeBinaryNode(operatorToken.type, left, right);
             currentToken = peek(parser);
         }
@@ -106,9 +110,30 @@ struct AstNode *parsePrint(Parser *parser)
     return node;
 }
 
-struct AstNode *parseIf(Parser *parser)
+struct AstNode *parseIfElse(Parser *parser)
 {
-    return NULL;
+    advance(parser);
+    expect(parser, TOKEN_LEFT_PAREN);
+    struct AstNode *expression = parseExpression(parser, 0);
+    expect(parser, TOKEN_RIGHT_PAREN);
+    expect(parser, TOKEN_LEFT_CURLY_BRACKET);
+    struct AstNode *ifBody = parseStatement(parser);
+    expect(parser, TOKEN_RIGHT_CURLY_BRACKET);
+    struct AstNode *elseBody = NULL;
+    if (peek(parser).type == TOKEN_ELIF)
+    {
+        elseBody = parseIfElse(parser);
+    }
+    if (peek(parser).type == TOKEN_ELSE)
+    {
+        advance(parser);
+        expect(parser, TOKEN_LEFT_CURLY_BRACKET);
+        elseBody = parseStatement(parser);
+        expect(parser, TOKEN_RIGHT_CURLY_BRACKET);
+    }
+
+    struct AstNode *node = makeIfElseNode(expression, ifBody, elseBody);
+    return node;
 }
 
 // MAKE NODES
@@ -151,6 +176,17 @@ struct AstNode *makePrintNode(struct AstNode *expression)
     return node;
 }
 
+struct AstNode *makeIfElseNode(struct AstNode *expression, struct AstNode *ifBody, struct AstNode *elseBody)
+{
+    struct AstNode *node = malloc(sizeof(struct AstNode));
+    node->type = NODE_IF_ELSE;
+    node->data.ifElse.expression = expression;
+    node->data.ifElse.ifBody = ifBody;
+    node->data.ifElse.elseBody = elseBody;
+
+    return node;
+}
+
 // HELPERS
 void printAST(ASTNode *node, int indent)
 {
@@ -187,6 +223,7 @@ void printAST(ASTNode *node, int indent)
         printf("VARIABLE NAME: %.*s\n", node->data.declaration.name.value.length, node->data.declaration.name.value.start);
         printAST(node->data.declaration.expression, indent + 1);
     }
+
     if (node->type == NODE_PRINT)
     {
         for (int i = 0; i < indent; i++)
@@ -196,6 +233,20 @@ void printAST(ASTNode *node, int indent)
         printf("PRINT:\n");
         printAST(node->data.print.expression, indent + 1);
     }
+
+    if (node->type == NODE_IF_ELSE)
+    {
+        printf("IF: \n");
+        printAST(node->data.ifElse.expression, indent + 1);
+        for (int i = 0; i < indent; i++)
+        {
+            printf(" ");
+        }
+        printf("THEN: \n");
+        printAST(node->data.ifElse.ifBody, indent + 1);
+        printf("ELSE: \n");
+        printAST(node->data.ifElse.elseBody, indent + 1);
+    }
 }
 
 int isOperator(TokenType type)
@@ -204,7 +255,8 @@ int isOperator(TokenType type)
                        TOKEN_ADD,
                        TOKEN_SUBTRACT,
                        TOKEN_MULTIPLY,
-                       TOKEN_DIVIDE};
+                       TOKEN_DIVIDE,
+                       TOKEN_EQUAL_EQUAL};
 
     int size = sizeof(operators) / sizeof(operators[0]);
     for (int i = 0; i < size; i++)
@@ -260,7 +312,7 @@ char *getTokenType(TokenType type)
     case TOKEN_BOOL_TYPE:
         return "BOOL TYPE";
     case TOKEN_EQUAL_EQUAL:
-        return "EQUAL EQUAL";
+        return "EQUAL TO";
     case TOKEN_VARIABLE:
         return "VARIABLE";
     case TOKEN_INCREMENT:
@@ -273,6 +325,10 @@ char *getTokenType(TokenType type)
         return "DECREMENT";
     case TOKEN_EOF:
         return "END OF FILE";
+    case TOKEN_LEFT_CURLY_BRACKET:
+        return "LEFT CURLY BRACKET";
+    case TOKEN_RIGHT_CURLY_BRACKET:
+        return "RIGHT CURLY BRACKET";
     default:
         return "UNKNOWN";
     }
@@ -292,6 +348,8 @@ int getTokenPrecedence(TokenType type)
         return PRODUCT;
     case TOKEN_EQUALS:
         return ASSIGNMENT;
+    case TOKEN_EQUAL_EQUAL:
+        return COMPARISON;
     default:
         return 0;
     }
@@ -316,6 +374,12 @@ void freeAST(ASTNode *node)
     else if (node->type == NODE_PRINT)
     {
         freeAST(node->data.print.expression);
+    }
+    else if (node->type == NODE_IF_ELSE)
+    {
+        freeAST(node->data.ifElse.expression);
+        freeAST(node->data.ifElse.ifBody);
+        freeAST(node->data.ifElse.elseBody);
     }
 
     free(node);

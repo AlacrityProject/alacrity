@@ -56,6 +56,22 @@ int tokenize(char source[], Token tokens[])
             tokenCount++;
             break;
 
+        case '{':
+            tokens[tokenCount].type = TOKEN_LEFT_CURLY_BRACKET;
+            tokens[tokenCount].value.start = &source[i];
+            tokens[tokenCount].value.length = 1;
+
+            tokenCount++;
+            break;
+
+        case '}':
+            tokens[tokenCount].type = TOKEN_RIGHT_CURLY_BRACKET;
+            tokens[tokenCount].value.start = &source[i];
+            tokens[tokenCount].value.length = 1;
+
+            tokenCount++;
+            break;
+
         case '=':
             // Todo: For '=' '+' '*' '-' peek at the next character to determine if it is singular or double
             // check source[i + 1] before assigning token type
