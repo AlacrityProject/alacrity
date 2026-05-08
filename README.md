@@ -20,3 +20,6 @@ A handwritten programming language made in C
     - Argument passing
     - Scope for local variables
     - Return mechanism
+
+* Work on in-line comments:
+    - Currently comments only work on their own separate lines
