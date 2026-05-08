@@ -33,6 +33,13 @@ int main()
         }
     }
 
+    // Print Current tokens
+    printf("\nCurrent Tokens: \n");
+    for (int i = 0; i < tokenCount; i++)
+    {
+        printf("Token Type: %s, Length: %d\n", getTokenType(tokens[i].type), tokens[i].value.length);
+    }
+
     SymbolTable table = {0};
 
     // Parser Initialization
@@ -42,7 +49,7 @@ int main()
     parser.tokenCount = tokenCount;
 
     // Retrieve and store nodes
-    struct AstNode *asts[1000] = {};
+    struct AstNode *asts[10000] = {};
     int size = 0;
     while (peek(&parser).type != TOKEN_EOF)
     {
@@ -55,13 +62,6 @@ int main()
                 size++;
             }
         }
-    }
-
-    // Print Current tokens
-    printf("\nCurrent Tokens: \n");
-    for (int i = 0; i < tokenCount; i++)
-    {
-        printf("Token Type: %s, Length: %d\n", getTokenType(tokens[i].type), tokens[i].value.length);
     }
 
     // Print Abstract Syntax Tree

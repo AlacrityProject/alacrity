@@ -25,7 +25,7 @@ Token expect(Parser *parser, TokenType type) // Calls advance but errors out if 
 
     if (token.type != type)
     {
-        fprintf(stderr, "ERROR");
+        fprintf(stderr, "ERROR!\n Expected type: %s Got: %s\n", getTokenType(type), getTokenType(token.type));
         exit(1);
     }
 
@@ -56,7 +56,8 @@ struct AstNode *parseStatement(Parser *parser)
     }
     else
     {
-        fprintf(stderr, "ERROR");
+        fprintf(stderr, "ERROR!\n Unknown token in parseStatement at index %d: %s\n",
+                parser->currentToken, getTokenType(peek(parser).type));
         exit(1);
     }
 }
@@ -256,7 +257,12 @@ int isOperator(TokenType type)
                        TOKEN_SUBTRACT,
                        TOKEN_MULTIPLY,
                        TOKEN_DIVIDE,
-                       TOKEN_EQUAL_EQUAL};
+                       TOKEN_EQUAL_TO,
+                       TOKEN_LESS_THAN,
+                       TOKEN_GREATER_THAN,
+                       TOKEN_LESS_THAN_EQUAL_TO,
+                       TOKEN_GREATER_THAN_EQUAL_TO,
+                       TOKEN_NOT_EQUAL_TO};
 
     int size = sizeof(operators) / sizeof(operators[0]);
     for (int i = 0; i < size; i++)
@@ -273,24 +279,69 @@ char *getTokenType(TokenType type)
 {
     switch (type)
     {
+    case TOKEN_IDENTIFIER:
+        return "IDENTIFIER";
+    case TOKEN_EOF:
+        return "END OF FILE";
+
     case TOKEN_LEFT_PAREN:
         return "LEFT PAREN";
     case TOKEN_RIGHT_PAREN:
         return "RIGHT PAREN";
+    case TOKEN_SEMICOLON:
+        return "SEMICOLON";
+    case TOKEN_LEFT_CURLY_BRACKET:
+        return "LEFT CURLY BRACKET";
+    case TOKEN_RIGHT_CURLY_BRACKET:
+        return "RIGHT CURLY BRACKET";
+
+    // Comparison
     case TOKEN_EQUALS:
         return "EQUALS";
+    case TOKEN_EQUAL_TO:
+        return "EQUAL TO";
+    case TOKEN_LESS_THAN:
+        return "LESS THAN";
+    case TOKEN_GREATER_THAN:
+        return "GREATER THAN";
+    case TOKEN_LESS_THAN_EQUAL_TO:
+        return "LESS THAN EQUAL TO";
+    case TOKEN_GREATER_THAN_EQUAL_TO:
+        return "GREATER THAN EQUAL TO";
+    case TOKEN_NOT_EQUAL_TO:
+        return "NOT EQUAL TO";
+
+    // Math
     case TOKEN_ADD:
         return "ADD";
+    case TOKEN_INCREMENT:
+        return "INCREMENT";
     case TOKEN_SUBTRACT:
         return "SUBTRACT";
+    case TOKEN_DECREMENT:
+        return "DECREMENT";
     case TOKEN_MULTIPLY:
         return "MULTIPLY";
+    case TOKEN_DOUBLE_ASTERISK:
+        return "DOUBLE ASTERISK";
     case TOKEN_DIVIDE:
         return "DIVIDE";
+
+    // Values
     case TOKEN_STRING:
         return "STRING";
     case TOKEN_INTEGER_LITERAL:
         return "INTEGER LITERAL";
+
+    // Types
+    case TOKEN_INT_TYPE:
+        return "INT TYPE";
+    case TOKEN_FLOAT_TYPE:
+        return "FLOAT TYPE";
+    case TOKEN_BOOL_TYPE:
+        return "BOOL TYPE";
+
+    // Keywords
     case TOKEN_PRINT:
         return "PRINT";
     case TOKEN_IF:
@@ -305,30 +356,13 @@ char *getTokenType(TokenType type)
         return "WHILE";
     case TOKEN_FUNC:
         return "FUNCTION";
-    case TOKEN_INT_TYPE:
-        return "INT TYPE";
-    case TOKEN_FLOAT_TYPE:
-        return "FLOAT TYPE";
-    case TOKEN_BOOL_TYPE:
-        return "BOOL TYPE";
-    case TOKEN_EQUAL_EQUAL:
-        return "EQUAL TO";
+
     case TOKEN_VARIABLE:
         return "VARIABLE";
-    case TOKEN_INCREMENT:
-        return "INCREMENT";
-    case TOKEN_SEMICOLON:
-        return "SEMICOLON";
-    case TOKEN_DOUBLE_ASTERISK:
-        return "DOUBLE ASTERISK";
-    case TOKEN_DECREMENT:
-        return "DECREMENT";
-    case TOKEN_EOF:
-        return "END OF FILE";
-    case TOKEN_LEFT_CURLY_BRACKET:
-        return "LEFT CURLY BRACKET";
-    case TOKEN_RIGHT_CURLY_BRACKET:
-        return "RIGHT CURLY BRACKET";
+
+    case TOKEN_NULL:
+        return "NULL";
+
     default:
         return "UNKNOWN";
     }
@@ -338,18 +372,32 @@ int getTokenPrecedence(TokenType type)
 {
     switch (type)
     {
-    case TOKEN_ADD:
-        return SUM;
-    case TOKEN_SUBTRACT:
-        return SUM;
+    // Higher Precedence at the top
     case TOKEN_MULTIPLY:
         return PRODUCT;
     case TOKEN_DIVIDE:
         return PRODUCT;
+
+    case TOKEN_ADD:
+        return SUM;
+    case TOKEN_SUBTRACT:
+        return SUM;
+
+    case TOKEN_EQUAL_TO:
+        return COMPARISON;
+    case TOKEN_LESS_THAN:
+        return COMPARISON;
+    case TOKEN_GREATER_THAN:
+        return COMPARISON;
+    case TOKEN_LESS_THAN_EQUAL_TO:
+        return COMPARISON;
+    case TOKEN_GREATER_THAN_EQUAL_TO:
+        return COMPARISON;
+    case TOKEN_NOT_EQUAL_TO:
+        return COMPARISON;
+
     case TOKEN_EQUALS:
         return ASSIGNMENT;
-    case TOKEN_EQUAL_EQUAL:
-        return COMPARISON;
     default:
         return 0;
     }

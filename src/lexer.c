@@ -73,12 +73,9 @@ int tokenize(char source[], Token tokens[])
             break;
 
         case '=':
-            // Todo: For '=' '+' '*' '-' peek at the next character to determine if it is singular or double
-            // check source[i + 1] before assigning token type
-
             if (source[i + 1] == '=')
             {
-                tokens[tokenCount].type = TOKEN_EQUAL_EQUAL;
+                tokens[tokenCount].type = TOKEN_EQUAL_TO;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 2;
                 i++;
@@ -154,6 +151,10 @@ int tokenize(char source[], Token tokens[])
                 {
                     i++;
                 }
+                if (source[i] == '\0')
+                {
+                    i--;
+                }
                 break;
             }
 
@@ -166,6 +167,62 @@ int tokenize(char source[], Token tokens[])
             }
 
             break;
+
+        case '<':
+            if (source[i + 1] == '=')
+            {
+                tokens[tokenCount].type = TOKEN_LESS_THAN_EQUAL_TO;
+                tokens[tokenCount].value.start = &source[i];
+                tokens[tokenCount].value.length = 2;
+                i++;
+            }
+
+            else
+            {
+                tokens[tokenCount].type = TOKEN_LESS_THAN;
+                tokens[tokenCount].value.start = &source[i];
+                tokens[tokenCount].value.length = 1;
+            }
+
+            tokenCount++;
+            break;
+        case '>':
+            if (source[i + 1] == '=')
+            {
+                tokens[tokenCount].type = TOKEN_GREATER_THAN_EQUAL_TO;
+                tokens[tokenCount].value.start = &source[i];
+                tokens[tokenCount].value.length = 2;
+                i++;
+            }
+
+            else
+            {
+                tokens[tokenCount].type = TOKEN_GREATER_THAN;
+                tokens[tokenCount].value.start = &source[i];
+                tokens[tokenCount].value.length = 1;
+            }
+
+            tokenCount++;
+            break;
+        case '!':
+            if (source[i + 1] == '=')
+            {
+                tokens[tokenCount].type = TOKEN_NOT_EQUAL_TO;
+                tokens[tokenCount].value.start = &source[i];
+                tokens[tokenCount].value.length = 2;
+                i++;
+            }
+
+            else
+            {
+                tokens[tokenCount].type = TOKEN_NULL;
+                tokens[tokenCount].value.start = &source[i];
+                tokens[tokenCount].value.length = 1;
+            }
+
+            tokenCount++;
+            break;
+
         case '"':
             int startIndex = i + 1;
             int closer = startIndex;

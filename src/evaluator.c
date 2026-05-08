@@ -55,7 +55,7 @@ int evaluator(ASTNode *ast, SymbolTable *table)
 
             if (entry == NULL)
             {
-                fprintf(stderr, "ERROR");
+                fprintf(stderr, "ERROR!\n Cannot find entry for variable name: %s\n", name);
                 exit(1);
             }
 
@@ -79,15 +79,18 @@ int evaluator(ASTNode *ast, SymbolTable *table)
             return left * right;
         case TOKEN_DIVIDE:
             return left / right;
-        case TOKEN_EQUAL_EQUAL:
-            if (left == right)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+        case TOKEN_EQUAL_TO:
+            return left == right;
+        case TOKEN_LESS_THAN:
+            return left < right;
+        case TOKEN_GREATER_THAN:
+            return left > right;
+        case TOKEN_LESS_THAN_EQUAL_TO:
+            return left <= right;
+        case TOKEN_GREATER_THAN_EQUAL_TO:
+            return left >= right;
+        case TOKEN_NOT_EQUAL_TO:
+            return left != right;
         default:
             break;
         }

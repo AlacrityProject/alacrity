@@ -4,35 +4,54 @@
 // Enum definitions
 typedef enum
 {
-    TOKEN_IDENTIFIER,          // 0
-    TOKEN_LEFT_PAREN,          // 1
-    TOKEN_RIGHT_PAREN,         // 2
-    TOKEN_EQUALS,              // 3
-    TOKEN_ADD,                 // 4
-    TOKEN_SUBTRACT,            // 5
-    TOKEN_MULTIPLY,            // 6
-    TOKEN_DIVIDE,              // 7
-    TOKEN_STRING,              // 8
-    TOKEN_INTEGER_LITERAL,     // 9
-    TOKEN_PRINT,               // 10
-    TOKEN_IF,                  // 11
-    TOKEN_ELSE,                // 12
-    TOKEN_ELIF,                // 13
-    TOKEN_FOR,                 // 14
-    TOKEN_WHILE,               // 15
-    TOKEN_FUNC,                // 16
-    TOKEN_INT_TYPE,            // 17
-    TOKEN_FLOAT_TYPE,          // 18
-    TOKEN_BOOL_TYPE,           // 19
-    TOKEN_EQUAL_EQUAL,         // 20
-    TOKEN_VARIABLE,            // 21
-    TOKEN_INCREMENT,           // 22
-    TOKEN_SEMICOLON,           // 23
-    TOKEN_DOUBLE_ASTERISK,     // 24
-    TOKEN_DECREMENT,           // 25
-    TOKEN_EOF,                 // 26
-    TOKEN_LEFT_CURLY_BRACKET,  // 27
-    TOKEN_RIGHT_CURLY_BRACKET, // 28
+    TOKEN_IDENTIFIER,
+    TOKEN_EOF,
+
+    TOKEN_LEFT_PAREN,
+    TOKEN_RIGHT_PAREN,
+    TOKEN_SEMICOLON,
+    TOKEN_LEFT_CURLY_BRACKET,
+    TOKEN_RIGHT_CURLY_BRACKET,
+
+    // Comparison
+    TOKEN_EQUALS,
+    TOKEN_EQUAL_TO,
+    TOKEN_LESS_THAN,
+    TOKEN_GREATER_THAN,
+    TOKEN_LESS_THAN_EQUAL_TO,
+    TOKEN_GREATER_THAN_EQUAL_TO,
+    TOKEN_NOT_EQUAL_TO,
+
+    // Math
+    TOKEN_ADD,
+    TOKEN_INCREMENT,
+    TOKEN_SUBTRACT,
+    TOKEN_DECREMENT,
+    TOKEN_MULTIPLY,
+    TOKEN_DOUBLE_ASTERISK,
+    TOKEN_DIVIDE,
+
+    // Values
+    TOKEN_STRING,
+    TOKEN_INTEGER_LITERAL,
+
+    // Types
+    TOKEN_INT_TYPE,
+    TOKEN_FLOAT_TYPE,
+    TOKEN_BOOL_TYPE,
+
+    // Keywords
+    TOKEN_PRINT,
+    TOKEN_IF,
+    TOKEN_ELSE,
+    TOKEN_ELIF,
+    TOKEN_FOR,
+    TOKEN_WHILE,
+    TOKEN_FUNC,
+
+    TOKEN_VARIABLE,
+
+    TOKEN_NULL
 
 } TokenType;
 
