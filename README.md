@@ -23,3 +23,12 @@ A handwritten programming language made in C
 
 * Work on in-line comments:
     - Currently comments only work on their own separate lines
+
+* Implement more types:
+    - Floats
+    - Strings
+    - Booleans
+
+* Implement loops:
+    - For loops
+    - While loops

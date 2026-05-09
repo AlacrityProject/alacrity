@@ -69,7 +69,7 @@ typedef enum
 typedef enum
 {
     NODE_LITERAL, // A number: 5
-                  // NODE_UNARY,   // A prefix: -5
+    NODE_UNARY,   // A prefix: -5
     NODE_BINARY,  // An operation: 5+5
     NODE_DECLARATION,
     NODE_PRINT,
