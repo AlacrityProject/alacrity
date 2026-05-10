@@ -22,21 +22,21 @@ elif (x == z) {
     print(z);
 }
 else { 
-    print(y);
+    print(y); 
 }
 
 if (x > z) { 
-    print(x); 
+    print(x);  
 }
 else { 
-    print(z); 
+    print(z);
 }
 
 if (z < x) {
     print(z);
 }
 else { 
-    print(x);
+    print(x); 
 }
 
 if (x != y) {
@@ -67,5 +67,6 @@ print(increment);
 int decrement = 5;
 decrement--;
 print(decrement);
+
 
 // Full expected program evaluation: 21, 1, 110, 1, 17, 71, 10, 11, 6, 11, 6, 0, -11, 6, 4

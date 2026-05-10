@@ -57,7 +57,7 @@ print(x + y);
 ```
 
 ### If / Elif / Else
-Conditional branching. Each block body supports a single statement.
+Conditional branching. Each block body supports a single statement for now.
 ```
 if (x == y) {
     print(x);
@@ -71,7 +71,7 @@ else {
 ```
 
 ### Comments
-Single-line comments only, using `//`. Comments must be on their own line for now.
+Single-line comments only, using `//`. 
 ```
 // This is a comment
 ```
