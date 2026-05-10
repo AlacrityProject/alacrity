@@ -145,5 +145,36 @@ int evaluator(ASTNode *ast, SymbolTable *table)
         return 0;
     }
 
+    if (ast->type == NODE_INCREMENT_DECREMENT)
+    {
+        int operator = ast->data.incrementDecrement.operator;
+        char name[100];
+        strncpy(name, ast->data.incrementDecrement.variable.value.start, ast->data.incrementDecrement.variable.value.length);
+        name[ast->data.incrementDecrement.variable.value.length] = '\0';
+        Entry *entry = findEntry(table, name);
+
+        if (entry == NULL)
+        {
+            fprintf(stderr, "ERROR!\n Cannot find entry for variable name: %s\n", name);
+            exit(1);
+        }
+
+        int entryValue = entry->value;
+
+        switch (operator)
+        {
+        case TOKEN_INCREMENT:
+            entryValue = entryValue + 1;
+            break;
+        case TOKEN_DECREMENT:
+            entryValue = entryValue - 1;
+            break;
+        default:
+            break;
+        }
+
+        entry->value = entryValue;
+    }
+
     return 0;
 }

@@ -60,4 +60,12 @@ else {
 print(!x);
 print(-x);
 
-// Full expected program evaluation: 21, 1, 110, 1, 17, 71, 10, 11, 6, 11, 6, 0, -11
+int increment = 5;
+increment++;
+print(increment);
+
+int decrement = 5;
+decrement--;
+print(decrement);
+
+// Full expected program evaluation: 21, 1, 110, 1, 17, 71, 10, 11, 6, 11, 6, 0, -11, 6, 4

@@ -69,12 +69,13 @@ typedef enum
 
 typedef enum
 {
-    NODE_LITERAL, // A number: 5
-    NODE_UNARY,   // A prefix: -5
-    NODE_BINARY,  // An operation: 5+5
+    NODE_LITERAL,
+    NODE_UNARY,
+    NODE_BINARY,
     NODE_DECLARATION,
     NODE_PRINT,
-    NODE_IF_ELSE
+    NODE_IF_ELSE,
+    NODE_INCREMENT_DECREMENT,
 
 } ASTNodeType;
 
@@ -121,6 +122,12 @@ typedef struct AstNode
             Token name;
             struct AstNode *expression;
         } declaration;
+
+        struct
+        {
+            Token variable;
+            int operator;
+        } incrementDecrement;
 
         struct
         {
@@ -182,6 +189,7 @@ struct AstNode *makeBinaryNode(int operator, struct AstNode * left, struct AstNo
 struct AstNode *makeDeclarationNode(Token tokenTypeKeyword, Token tokenName, ASTNode *expression);
 struct AstNode *makePrintNode(struct AstNode *expression);
 struct AstNode *makeIfElseNode(struct AstNode *expression, struct AstNode *ifBody, struct AstNode *elseBody);
+struct AstNode *makeIncrementDecrementNode(int operator, Token variable);
 
 // Parsing Helper functions
 void printAST(ASTNode *node, int indent);

@@ -54,6 +54,12 @@ struct AstNode *parseStatement(Parser *parser)
     {
         return parseIfElse(parser);
     }
+    else if (currentToken.type == TOKEN_VARIABLE)
+    {
+        struct AstNode *node = parseExpression(parser, 0);
+        expect(parser, TOKEN_SEMICOLON);
+        return node;
+    }
     else
     {
         fprintf(stderr, "ERROR!\n Unknown token in parseStatement at index %d: %s\n",
@@ -94,6 +100,14 @@ struct AstNode *parseExpression(Parser *parser, int minimumBindingPower)
         struct AstNode *left = makeLiteralNode(advance(parser));
 
         currentToken = peek(parser);
+
+        if (currentToken.type == TOKEN_INCREMENT || currentToken.type == TOKEN_DECREMENT)
+        {
+            advance(parser);
+            struct AstNode *node = makeIncrementDecrementNode(currentToken.type, left->data.token);
+            return node;
+        }
+
         while (isOperator(currentToken.type) && getTokenPrecedence(currentToken.type) > minimumBindingPower)
         {
             Token operatorToken = advance(parser);
@@ -172,6 +186,15 @@ struct AstNode *makeBinaryNode(int operator, struct AstNode *left, struct AstNod
     node->data.binary.operator = operator;
     node->data.binary.left = left;
     node->data.binary.right = right;
+    return node;
+}
+
+struct AstNode *makeIncrementDecrementNode(int operator, Token variable)
+{
+    struct AstNode *node = malloc(sizeof(struct AstNode));
+    node->type = NODE_INCREMENT_DECREMENT;
+    node->data.incrementDecrement.operator = operator;
+    node->data.incrementDecrement.variable = variable;
     return node;
 }
 
@@ -270,6 +293,11 @@ void printAST(ASTNode *node, int indent)
         printAST(node->data.ifElse.ifBody, indent + 1);
         printf("ELSE: \n");
         printAST(node->data.ifElse.elseBody, indent + 1);
+    }
+
+    if (node->type == NODE_INCREMENT_DECREMENT)
+    {
+        printf("%s  %.*s\n", getTokenType(node->data.incrementDecrement.operator), node->data.incrementDecrement.variable.value.length, node->data.incrementDecrement.variable.value.start);
     }
 }
 
@@ -438,19 +466,19 @@ void freeAST(ASTNode *node)
         freeAST(node->data.binary.left);
         freeAST(node->data.binary.right);
     }
-    else if (node->type == NODE_UNARY)
+    if (node->type == NODE_UNARY)
     {
         freeAST(node->data.unary.operand);
     }
-    else if (node->type == NODE_DECLARATION)
+    if (node->type == NODE_DECLARATION)
     {
         freeAST(node->data.declaration.expression);
     }
-    else if (node->type == NODE_PRINT)
+    if (node->type == NODE_PRINT)
     {
         freeAST(node->data.print.expression);
     }
-    else if (node->type == NODE_IF_ELSE)
+    if (node->type == NODE_IF_ELSE)
     {
         freeAST(node->data.ifElse.expression);
         freeAST(node->data.ifElse.ifBody);
