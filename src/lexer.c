@@ -215,7 +215,7 @@ int tokenize(char source[], Token tokens[])
 
             else
             {
-                tokens[tokenCount].type = TOKEN_NULL;
+                tokens[tokenCount].type = TOKEN_NOT;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 1;
             }

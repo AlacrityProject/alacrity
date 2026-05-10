@@ -21,6 +21,7 @@ typedef enum
     TOKEN_LESS_THAN_EQUAL_TO,
     TOKEN_GREATER_THAN_EQUAL_TO,
     TOKEN_NOT_EQUAL_TO,
+    TOKEN_NOT,
 
     // Math
     TOKEN_ADD,
@@ -103,6 +104,12 @@ typedef struct AstNode
     {
         struct
         {
+            int operator;
+            struct AstNode *operand;
+        } unary;
+
+        struct
+        {
             struct AstNode *left;
             struct AstNode *right;
             int operator;
@@ -170,6 +177,7 @@ struct AstNode *parseIfElse(Parser *parser);
 
 // Node Creation functions
 struct AstNode *makeLiteralNode(Token token);
+struct AstNode *makeUnaryNode(Token operator, struct AstNode * operand);
 struct AstNode *makeBinaryNode(int operator, struct AstNode * left, struct AstNode *right);
 struct AstNode *makeDeclarationNode(Token tokenTypeKeyword, Token tokenName, ASTNode *expression);
 struct AstNode *makePrintNode(struct AstNode *expression);

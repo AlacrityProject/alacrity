@@ -80,6 +80,15 @@ struct AstNode *parseExpression(Parser *parser, int minimumBindingPower)
 {
     Token currentToken = peek(parser);
 
+    if (currentToken.type == TOKEN_NOT || currentToken.type == TOKEN_SUBTRACT)
+    {
+        Token operator = currentToken;
+        advance(parser);
+        struct AstNode *operand = parseExpression(parser, UNARY);
+        struct AstNode *unaryNode = makeUnaryNode(operator, operand);
+        return unaryNode;
+    }
+
     if (currentToken.type == TOKEN_INTEGER_LITERAL || currentToken.type == TOKEN_VARIABLE)
     {
         struct AstNode *left = makeLiteralNode(advance(parser));
@@ -147,6 +156,15 @@ struct AstNode *makeLiteralNode(Token token)
     return node;
 }
 
+struct AstNode *makeUnaryNode(Token operator, struct AstNode *operand)
+{
+    struct AstNode *node = malloc(sizeof(struct AstNode));
+    node->type = NODE_UNARY;
+    node->data.unary.operator = operator.type;
+    node->data.unary.operand = operand;
+    return node;
+}
+
 struct AstNode *makeBinaryNode(int operator, struct AstNode *left, struct AstNode *right)
 {
     struct AstNode *node = malloc(sizeof(struct AstNode));
@@ -207,6 +225,11 @@ void printAST(ASTNode *node, int indent)
         printf("BINARY: %s\n", getTokenType(node->data.binary.operator));
         printAST(node->data.binary.left, indent + 1);
         printAST(node->data.binary.right, indent + 1);
+    }
+    if (node->type == NODE_UNARY)
+    {
+        printf("UNARY: %s\n", getTokenType(node->data.unary.operator));
+        printAST(node->data.unary.operand, indent + 1);
     }
 
     if (node->type == NODE_LITERAL)
@@ -414,6 +437,10 @@ void freeAST(ASTNode *node)
     {
         freeAST(node->data.binary.left);
         freeAST(node->data.binary.right);
+    }
+    else if (node->type == NODE_UNARY)
+    {
+        freeAST(node->data.unary.operand);
     }
     else if (node->type == NODE_DECLARATION)
     {

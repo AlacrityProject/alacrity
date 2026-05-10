@@ -57,4 +57,7 @@ else {
     print(x); 
 }
 
-// Full expected program evaluation: 21, 1, 110, 1, 17, 71, 10, 11, 6, 11, 6
+print(!x);
+print(-x);
+
+// Full expected program evaluation: 21, 1, 110, 1, 17, 71, 10, 11, 6, 11, 6, 0, -11

@@ -63,6 +63,22 @@ int evaluator(ASTNode *ast, SymbolTable *table)
         }
     }
 
+    if (ast->type == NODE_UNARY)
+    {
+        int operator = ast->data.unary.operator;
+        int value = evaluator(ast->data.unary.operand, table);
+
+        switch (operator)
+        {
+        case TOKEN_SUBTRACT:
+            return -value;
+        case TOKEN_NOT:
+            return !value;
+        default:
+            break;
+        }
+    }
+
     if (ast->type == NODE_BINARY)
     {
         int left = evaluator(ast->data.binary.left, table);
