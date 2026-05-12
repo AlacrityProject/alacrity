@@ -1,6 +1,8 @@
 #ifndef AST_H
 #define AST_H
 
+#include <stdbool.h>
+
 // Enum definitions
 typedef enum
 {
@@ -12,6 +14,8 @@ typedef enum
     TOKEN_SEMICOLON,
     TOKEN_LEFT_CURLY_BRACKET,
     TOKEN_RIGHT_CURLY_BRACKET,
+    TOKEN_ARROW,
+    TOKEN_COMMA,
 
     // Comparison
     TOKEN_EQUALS,
@@ -49,6 +53,7 @@ typedef enum
     TOKEN_FOR,
     TOKEN_WHILE,
     TOKEN_FUNC,
+    TOKEN_RETURN,
 
     TOKEN_VARIABLE,
 
@@ -72,10 +77,19 @@ typedef enum
     NODE_LITERAL,
     NODE_UNARY,
     NODE_BINARY,
+
     NODE_DECLARATION,
+
     NODE_PRINT,
+
     NODE_IF_ELSE,
+
     NODE_INCREMENT_DECREMENT,
+
+    NODE_FUNCTION,
+    NODE_FUNCTION_CALL,
+    NODE_RETURN,
+    NODE_BLOCK,
 
 } ASTNodeType;
 
@@ -141,6 +155,35 @@ typedef struct AstNode
             struct AstNode *elseBody;
         } ifElse;
 
+        struct
+        {
+            struct AstNode **statements;
+            int totalCount;
+        } nodeBlock;
+
+        struct
+        {
+            Token name;
+            Token *parameters;
+            Token *parameterTypes;
+            int parameterCount;
+            Token returnTypeKeyword;
+            struct AstNode *body;
+
+        } function;
+
+        struct
+        {
+            Token name;
+            struct AstNode **arguments;
+            int argumentCount;
+        } functionCall;
+
+        struct
+        {
+            struct AstNode *expression;
+        } returnNode;
+
         Token token;
     } data;
 } ASTNode;
@@ -165,6 +208,24 @@ typedef struct
     int totalCount;
 } SymbolTable;
 
+typedef struct
+{
+    char name[100];
+    struct AstNode *node;
+} FunctionEntry;
+
+typedef struct
+{
+    FunctionEntry entries[1000];
+    int totalCount;
+} FunctionTable;
+
+typedef struct
+{
+    int value;
+    bool returned;
+} ReturnResult;
+
 // Lexer functions
 char *readFile(char filename[]);
 int tokenize(char source[], Token tokens[]);
@@ -172,6 +233,7 @@ int determine_identifier(char *token, int length, Keyword keywords[], int number
 
 // Parsing functions
 Token peek(Parser *parser);
+Token peekNext(Parser *parser);
 Token advance(Parser *parser);
 Token expect(Parser *parser, TokenType type);
 
@@ -181,6 +243,10 @@ struct AstNode *parseExpression(Parser *parser, int minimumBindingPower);
 struct AstNode *parseDeclaration(Parser *parser);
 struct AstNode *parsePrint(Parser *parser);
 struct AstNode *parseIfElse(Parser *parser);
+struct AstNode *parseFunctionDeclaration(Parser *parser);
+struct AstNode *parseFunctionCall(Parser *parser);
+struct AstNode *parseBlock(Parser *parser);
+struct AstNode *parseReturn(Parser *parser);
 
 // Node Creation functions
 struct AstNode *makeLiteralNode(Token token);
@@ -190,6 +256,10 @@ struct AstNode *makeDeclarationNode(Token tokenTypeKeyword, Token tokenName, AST
 struct AstNode *makePrintNode(struct AstNode *expression);
 struct AstNode *makeIfElseNode(struct AstNode *expression, struct AstNode *ifBody, struct AstNode *elseBody);
 struct AstNode *makeIncrementDecrementNode(int operator, Token variable);
+struct AstNode *makeBlockNode(struct AstNode **statements, int totalCount);
+struct AstNode *makeFunctionNode(Token name, Token *parameters, Token *parameterTypes, int parameterCount, Token returnType, struct AstNode *body);
+struct AstNode *makeFunctionCallNode(Token name, struct AstNode **arguments, int argumentCount);
+struct AstNode *makeReturnNode(struct AstNode *expression);
 
 // Parsing Helper functions
 void printAST(ASTNode *node, int indent);
@@ -201,6 +271,10 @@ void freeAST(ASTNode *node);
 // Evaluator functions
 Entry *findEntry(SymbolTable *table, char variableName[]);
 void storeEntry(SymbolTable *table, char variableName[], int valueToStore);
-int evaluator(ASTNode *ast, SymbolTable *table);
+
+FunctionEntry *findFunctionEntry(FunctionTable *table, char functionName[]);
+void storeFunctionEntry(FunctionTable *table, char functionName[], struct AstNode *nodeToStore);
+
+int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, ReturnResult *result);
 
 #endif

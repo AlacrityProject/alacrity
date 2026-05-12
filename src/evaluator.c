@@ -28,7 +28,30 @@ Entry *findEntry(SymbolTable *table, char variableName[])
     return NULL;
 }
 
-int evaluator(ASTNode *ast, SymbolTable *table)
+void storeFunctionEntry(FunctionTable *functionTable, char functionName[], struct AstNode *nodeToStore)
+{
+    FunctionEntry entry;
+    strncpy(entry.name, functionName, strlen(functionName));
+    entry.name[strlen(functionName)] = '\0';
+    entry.node = nodeToStore;
+    functionTable->entries[functionTable->totalCount] = entry;
+    functionTable->totalCount++;
+}
+
+FunctionEntry *findFunctionEntry(FunctionTable *functionTable, char functionName[])
+{
+    for (int i = 0; i < functionTable->totalCount; i++)
+    {
+        if (strcmp(functionTable->entries[i].name, functionName) == 0)
+        {
+            return &functionTable->entries[i];
+        }
+    }
+
+    return NULL;
+}
+
+int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, ReturnResult *result)
 {
     if (ast == NULL)
     {
@@ -66,7 +89,7 @@ int evaluator(ASTNode *ast, SymbolTable *table)
     if (ast->type == NODE_UNARY)
     {
         int operator = ast->data.unary.operator;
-        int value = evaluator(ast->data.unary.operand, table);
+        int value = evaluator(ast->data.unary.operand, table, functionTable, result);
 
         switch (operator)
         {
@@ -81,8 +104,8 @@ int evaluator(ASTNode *ast, SymbolTable *table)
 
     if (ast->type == NODE_BINARY)
     {
-        int left = evaluator(ast->data.binary.left, table);
-        int right = evaluator(ast->data.binary.right, table);
+        int left = evaluator(ast->data.binary.left, table, functionTable, result);
+        int right = evaluator(ast->data.binary.right, table, functionTable, result);
         int operator = ast->data.binary.operator;
 
         switch (operator)
@@ -114,7 +137,7 @@ int evaluator(ASTNode *ast, SymbolTable *table)
 
     if (ast->type == NODE_DECLARATION)
     {
-        int expression = evaluator(ast->data.declaration.expression, table);
+        int expression = evaluator(ast->data.declaration.expression, table, functionTable, result);
         char name[100];
         strncpy(name, ast->data.declaration.name.value.start, ast->data.declaration.name.value.length);
         name[ast->data.declaration.name.value.length] = '\0';
@@ -124,22 +147,31 @@ int evaluator(ASTNode *ast, SymbolTable *table)
 
     if (ast->type == NODE_PRINT)
     {
-        int expression = evaluator(ast->data.print.expression, table);
+        int expression = evaluator(ast->data.print.expression, table, functionTable, result);
         printf("%d\n", expression);
         return 0;
     }
 
     if (ast->type == NODE_IF_ELSE)
     {
-        int expression = evaluator(ast->data.ifElse.expression, table);
+        int expression = evaluator(ast->data.ifElse.expression, table, functionTable, result);
+        if (result->returned)
+        {
+            return result->value;
+        }
 
         if (expression == true)
         {
-            evaluator(ast->data.ifElse.ifBody, table);
+            evaluator(ast->data.ifElse.ifBody, table, functionTable, result);
         }
         else if (ast->data.ifElse.elseBody != NULL)
         {
-            evaluator(ast->data.ifElse.elseBody, table);
+            evaluator(ast->data.ifElse.elseBody, table, functionTable, result);
+        }
+
+        if (result->returned)
+        {
+            return result->value;
         }
 
         return 0;
@@ -174,6 +206,73 @@ int evaluator(ASTNode *ast, SymbolTable *table)
         }
 
         entry->value = entryValue;
+    }
+
+    if (ast->type == NODE_FUNCTION)
+    {
+        char name[100];
+        strncpy(name, ast->data.function.name.value.start, ast->data.function.name.value.length);
+        name[ast->data.function.name.value.length] = '\0';
+        storeFunctionEntry(functionTable, name, ast);
+
+        return 0;
+    }
+
+    if (ast->type == NODE_FUNCTION_CALL)
+    {
+        char name[100];
+        strncpy(name, ast->data.functionCall.name.value.start, ast->data.functionCall.name.value.length);
+        name[ast->data.functionCall.name.value.length] = '\0';
+        FunctionEntry *functionEntry = findFunctionEntry(functionTable, name);
+
+        if (functionEntry == NULL)
+        {
+            fprintf(stderr, "ERROR!\n Cannot find function entry for function name: %s\n", name);
+            exit(1);
+        }
+
+        SymbolTable localTable;
+        localTable.totalCount = 0;
+
+        struct AstNode *node = functionEntry->node;
+
+        for (int i = 0; i < ast->data.functionCall.argumentCount; i++)
+        {
+            int value = evaluator(ast->data.functionCall.arguments[i], table, functionTable, result);
+
+            char parameterName[100];
+            Token parameterToken = node->data.function.parameters[i];
+            strncpy(parameterName, parameterToken.value.start, parameterToken.value.length);
+            parameterName[parameterToken.value.length] = '\0';
+
+            storeEntry(&localTable, parameterName, value);
+        }
+
+        ReturnResult localResult = {0, false};
+
+        evaluator(node->data.function.body, &localTable, functionTable, &localResult);
+
+        return localResult.value;
+    }
+    if (ast->type == NODE_BLOCK)
+    {
+        for (int i = 0; i < ast->data.nodeBlock.totalCount; i++)
+        {
+            evaluator(ast->data.nodeBlock.statements[i], table, functionTable, result);
+
+            if (result->returned)
+            {
+                break;
+            }
+        }
+        return result->value;
+    }
+    if (ast->type == NODE_RETURN)
+    {
+        int expression = evaluator(ast->data.returnNode.expression, table, functionTable, result);
+        result->value = expression;
+        result->returned = true;
+        return expression;
     }
 
     return 0;

@@ -4,13 +4,15 @@
 
 int main()
 {
-    Keyword keywords[6] = {
+    Keyword keywords[8] = {
         {"variable", TOKEN_VARIABLE},
         {"print", TOKEN_PRINT},
         {"int", TOKEN_INT_TYPE},
         {"if", TOKEN_IF},
         {"else", TOKEN_ELSE},
         {"elif", TOKEN_ELIF},
+        {"func", TOKEN_FUNC},
+        {"return", TOKEN_RETURN},
     };
     int numberOfKeywords = sizeof(keywords) / sizeof(keywords[0]);
 
@@ -41,6 +43,8 @@ int main()
     }
 
     SymbolTable table = {0};
+    FunctionTable functionTable = {0};
+    ReturnResult result = {0, false};
 
     // Parser Initialization
     Parser parser;
@@ -75,7 +79,7 @@ int main()
     printf("\nProgram Evaluation:\n");
     for (int i = 0; i < size; i++)
     {
-        evaluator(asts[i], &table);
+        evaluator(asts[i], &table, &functionTable, &result);
     }
 
     // Free ASTs

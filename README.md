@@ -57,7 +57,7 @@ print(x + y);
 ```
 
 ### If / Elif / Else
-Conditional branching. Each block body supports a single statement for now.
+Conditional branching.
 ```
 if (x == y) {
     print(x);
@@ -109,16 +109,6 @@ print(counter);  // 6
 ---
 
 ## TODO
-
-* Implement functions:
-    - Function declaration parsing
-    - Storing function definitions (separate from variable storage table)
-    - Argument passing
-    - Scope for local variables
-    - Return mechanism
-
-* Work on in-line comments:
-    - Currently comments only work on their own separate lines
 
 * Implement more types:
     - Floats

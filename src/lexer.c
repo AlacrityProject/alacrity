@@ -40,6 +40,14 @@ int tokenize(char source[], Token tokens[])
             tokenCount++;
             break;
 
+        case ',':
+            tokens[tokenCount].type = TOKEN_COMMA;
+            tokens[tokenCount].value.start = &source[i];
+            tokens[tokenCount].value.length = 1;
+
+            tokenCount++;
+            break;
+
         case '(':
             tokens[tokenCount].type = TOKEN_LEFT_PAREN;
             tokens[tokenCount].value.start = &source[i];
@@ -112,6 +120,14 @@ int tokenize(char source[], Token tokens[])
             if (source[i + 1] == '-')
             {
                 tokens[tokenCount].type = TOKEN_DECREMENT;
+                tokens[tokenCount].value.start = &source[i];
+                tokens[tokenCount].value.length = 2;
+                i++;
+            }
+
+            else if (source[i + 1] == '>')
+            {
+                tokens[tokenCount].type = TOKEN_ARROW;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 2;
                 i++;
@@ -244,12 +260,12 @@ int tokenize(char source[], Token tokens[])
         case '\n':
             break;
         default:
-            if (isalpha(source[i]))
+            if (isalpha(source[i]) || source[i] == '_')
             {
                 int startIndex = i;
                 int closer = startIndex;
 
-                while (isalnum(source[closer]))
+                while (isalnum(source[closer]) || source[closer] == '_')
                     closer++;
 
                 tokens[tokenCount].type = TOKEN_IDENTIFIER;

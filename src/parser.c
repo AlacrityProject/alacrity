@@ -10,6 +10,15 @@ Token peek(Parser *parser) // Returns the current token without moving
     return parser->tokens[parser->currentToken];
 }
 
+Token peekNext(Parser *parser)
+{
+    if (parser->currentToken + 1 >= parser->tokenCount)
+    {
+        return parser->tokens[parser->tokenCount - 1];
+    }
+    return parser->tokens[parser->currentToken + 1];
+}
+
 Token advance(Parser *parser) // Returns the current token and moves the index forward by one
 {
     Token current = parser->tokens[parser->currentToken];
@@ -60,6 +69,16 @@ struct AstNode *parseStatement(Parser *parser)
         expect(parser, TOKEN_SEMICOLON);
         return node;
     }
+    else if (currentToken.type == TOKEN_FUNC)
+    {
+        return parseFunctionDeclaration(parser);
+    }
+
+    else if (currentToken.type == TOKEN_RETURN)
+    {
+        return parseReturn(parser);
+    }
+
     else
     {
         fprintf(stderr, "ERROR!\n Unknown token in parseStatement at index %d: %s\n",
@@ -97,6 +116,11 @@ struct AstNode *parseExpression(Parser *parser, int minimumBindingPower)
 
     if (currentToken.type == TOKEN_INTEGER_LITERAL || currentToken.type == TOKEN_VARIABLE)
     {
+        if (peekNext(parser).type == TOKEN_LEFT_PAREN)
+        {
+            return parseFunctionCall(parser);
+        }
+
         struct AstNode *left = makeLiteralNode(advance(parser));
 
         currentToken = peek(parser);
@@ -141,22 +165,123 @@ struct AstNode *parseIfElse(Parser *parser)
     struct AstNode *expression = parseExpression(parser, 0);
     expect(parser, TOKEN_RIGHT_PAREN);
     expect(parser, TOKEN_LEFT_CURLY_BRACKET);
-    struct AstNode *ifBody = parseStatement(parser);
+    struct AstNode *ifBody = parseBlock(parser);
     expect(parser, TOKEN_RIGHT_CURLY_BRACKET);
     struct AstNode *elseBody = NULL;
     if (peek(parser).type == TOKEN_ELIF)
     {
         elseBody = parseIfElse(parser);
     }
-    if (peek(parser).type == TOKEN_ELSE)
+    else if (peek(parser).type == TOKEN_ELSE)
     {
         advance(parser);
         expect(parser, TOKEN_LEFT_CURLY_BRACKET);
-        elseBody = parseStatement(parser);
+        elseBody = parseBlock(parser);
         expect(parser, TOKEN_RIGHT_CURLY_BRACKET);
     }
 
     struct AstNode *node = makeIfElseNode(expression, ifBody, elseBody);
+    return node;
+}
+
+struct AstNode *parseFunctionDeclaration(Parser *parser)
+{
+    advance(parser);
+    Token name = expect(parser, TOKEN_VARIABLE);
+    expect(parser, TOKEN_LEFT_PAREN);
+
+    Token currentToken = peek(parser);
+
+    Token *parameters = malloc(sizeof(Token) * 100);
+    Token *parameterTypes = malloc(sizeof(Token) * 100);
+    int parameterCount = 0;
+
+    while (currentToken.type != TOKEN_RIGHT_PAREN)
+    {
+        parameterTypes[parameterCount] = advance(parser);
+        parameters[parameterCount] = advance(parser);
+
+        parameterCount++;
+        currentToken = peek(parser);
+
+        if (currentToken.type == TOKEN_COMMA)
+        {
+            advance(parser);
+            continue;
+        }
+        if (currentToken.type == TOKEN_RIGHT_PAREN)
+        {
+            break;
+        }
+    }
+
+    expect(parser, TOKEN_RIGHT_PAREN);
+    expect(parser, TOKEN_ARROW);
+    Token returnType = advance(parser);
+    expect(parser, TOKEN_LEFT_CURLY_BRACKET);
+    struct AstNode *body = parseBlock(parser);
+    expect(parser, TOKEN_RIGHT_CURLY_BRACKET);
+
+    struct AstNode *node = makeFunctionNode(name, parameters, parameterTypes, parameterCount, returnType, body);
+
+    return node;
+}
+
+struct AstNode *parseFunctionCall(Parser *parser)
+{
+
+    Token name = advance(parser);
+    expect(parser, TOKEN_LEFT_PAREN);
+    struct AstNode **arguments = malloc(sizeof(struct AstNode *) * 100);
+    int argumentCount = 0;
+    Token currentToken = peek(parser);
+
+    while (currentToken.type != TOKEN_RIGHT_PAREN)
+    {
+        arguments[argumentCount] = parseExpression(parser, 0);
+        argumentCount++;
+
+        currentToken = peek(parser);
+
+        if (currentToken.type == TOKEN_COMMA)
+        {
+            advance(parser);
+            continue;
+        }
+        if (currentToken.type == TOKEN_RIGHT_PAREN)
+        {
+            break;
+        }
+    }
+
+    expect(parser, TOKEN_RIGHT_PAREN);
+    struct AstNode *node = makeFunctionCallNode(name, arguments, argumentCount);
+
+    return node;
+}
+
+struct AstNode *parseBlock(Parser *parser)
+{
+    struct AstNode **statements = malloc(sizeof(struct AstNode *) * 100);
+    int totalCount = 0;
+    Token currentToken = peek(parser);
+    while (currentToken.type != TOKEN_RIGHT_CURLY_BRACKET && currentToken.type != TOKEN_EOF)
+    {
+        statements[totalCount] = parseStatement(parser);
+        totalCount++;
+        currentToken = peek(parser);
+    }
+
+    return makeBlockNode(statements, totalCount);
+}
+
+struct AstNode *parseReturn(Parser *parser)
+{
+    advance(parser);
+    struct AstNode *expression = parseExpression(parser, 0);
+    expect(parser, TOKEN_SEMICOLON);
+    struct AstNode *node = makeReturnNode(expression);
+
     return node;
 }
 
@@ -198,7 +323,7 @@ struct AstNode *makeIncrementDecrementNode(int operator, Token variable)
     return node;
 }
 
-struct AstNode *makeDeclarationNode(Token tokenTypeKeyword, Token tokenName, ASTNode *expression)
+struct AstNode *makeDeclarationNode(Token tokenTypeKeyword, Token tokenName, struct AstNode *expression)
 {
     struct AstNode *node = malloc(sizeof(struct AstNode));
     node->type = NODE_DECLARATION;
@@ -229,12 +354,60 @@ struct AstNode *makeIfElseNode(struct AstNode *expression, struct AstNode *ifBod
     return node;
 }
 
+struct AstNode *makeBlockNode(struct AstNode **statements, int totalCount)
+{
+    struct AstNode *node = malloc(sizeof(struct AstNode));
+    node->type = NODE_BLOCK;
+    node->data.nodeBlock.statements = statements;
+    node->data.nodeBlock.totalCount = totalCount;
+
+    return node;
+}
+
+struct AstNode *makeFunctionNode(Token name, Token *parameters, Token *parameterTypes, int parameterCount, Token returnType, struct AstNode *body)
+{
+    struct AstNode *node = malloc(sizeof(struct AstNode));
+    node->type = NODE_FUNCTION;
+    node->data.function.name = name;
+    node->data.function.parameters = parameters;
+    node->data.function.parameterTypes = parameterTypes;
+    node->data.function.parameterCount = parameterCount;
+    node->data.function.returnTypeKeyword = returnType;
+    node->data.function.body = body;
+
+    return node;
+}
+
+struct AstNode *makeFunctionCallNode(Token name, struct AstNode **arguments, int argumentCount)
+{
+    struct AstNode *node = malloc(sizeof(struct AstNode));
+    node->type = NODE_FUNCTION_CALL;
+    node->data.functionCall.name = name;
+    node->data.functionCall.arguments = arguments;
+    node->data.functionCall.argumentCount = argumentCount;
+
+    return node;
+}
+
+struct AstNode *makeReturnNode(struct AstNode *expression)
+{
+    struct AstNode *node = malloc(sizeof(struct AstNode));
+    node->type = NODE_RETURN;
+    node->data.returnNode.expression = expression;
+
+    return node;
+}
+
 // HELPERS
 void printAST(ASTNode *node, int indent)
 {
     if (node == NULL)
     {
-        printf("NULL");
+        for (int i = 0; i < indent; i++)
+        {
+            printf(" ");
+        }
+        printf("NULL\n");
         return;
     }
 
@@ -291,6 +464,10 @@ void printAST(ASTNode *node, int indent)
         }
         printf("THEN: \n");
         printAST(node->data.ifElse.ifBody, indent + 1);
+        for (int i = 0; i < indent; i++)
+        {
+            printf(" ");
+        }
         printf("ELSE: \n");
         printAST(node->data.ifElse.elseBody, indent + 1);
     }
@@ -298,6 +475,35 @@ void printAST(ASTNode *node, int indent)
     if (node->type == NODE_INCREMENT_DECREMENT)
     {
         printf("%s  %.*s\n", getTokenType(node->data.incrementDecrement.operator), node->data.incrementDecrement.variable.value.length, node->data.incrementDecrement.variable.value.start);
+    }
+
+    if (node->type == NODE_FUNCTION)
+    {
+        printf("FUNCTION: %.*s (Args: %d)\nRETURN TYPE: %.*s\n", node->data.function.name.value.length, node->data.function.name.value.start, node->data.function.parameterCount, node->data.function.returnTypeKeyword.value.length, node->data.function.returnTypeKeyword.value.start);
+        printAST(node->data.function.body, indent + 1);
+    }
+
+    if (node->type == NODE_FUNCTION_CALL)
+    {
+        printf("CALL: %.*s\n", node->data.functionCall.name.value.length, node->data.functionCall.name.value.start);
+        for (int i = 0; i < node->data.functionCall.argumentCount; i++)
+        {
+            printAST(node->data.functionCall.arguments[i], indent + 1);
+        }
+    }
+
+    if (node->type == NODE_RETURN)
+    {
+        printf("RETURN:\n");
+        printAST(node->data.returnNode.expression, indent + 1);
+    }
+    if (node->type == NODE_BLOCK)
+    {
+        printf("BLOCK (%d statements):\n", node->data.nodeBlock.totalCount);
+        for (int i = 0; i < node->data.nodeBlock.totalCount; i++)
+        {
+            printAST(node->data.nodeBlock.statements[i], indent + 1);
+        }
     }
 }
 
@@ -345,6 +551,10 @@ char *getTokenType(TokenType type)
         return "LEFT CURLY BRACKET";
     case TOKEN_RIGHT_CURLY_BRACKET:
         return "RIGHT CURLY BRACKET";
+    case TOKEN_ARROW:
+        return "ARROW";
+    case TOKEN_COMMA:
+        return "COMMA";
 
     // Comparison
     case TOKEN_EQUALS:
@@ -407,6 +617,8 @@ char *getTokenType(TokenType type)
         return "WHILE";
     case TOKEN_FUNC:
         return "FUNCTION";
+    case TOKEN_RETURN:
+        return "RETURN";
 
     case TOKEN_VARIABLE:
         return "VARIABLE";
@@ -483,6 +695,34 @@ void freeAST(ASTNode *node)
         freeAST(node->data.ifElse.expression);
         freeAST(node->data.ifElse.ifBody);
         freeAST(node->data.ifElse.elseBody);
+    }
+    if (node->type == NODE_FUNCTION)
+    {
+        free(node->data.function.parameters);
+        free(node->data.function.parameterTypes);
+        freeAST(node->data.function.body);
+    }
+    if (node->type == NODE_FUNCTION_CALL)
+    {
+        int argumentCount = node->data.functionCall.argumentCount;
+        for (int i = 0; i < argumentCount; i++)
+        {
+            freeAST(node->data.functionCall.arguments[i]);
+        }
+        free(node->data.functionCall.arguments);
+    }
+    if (node->type == NODE_RETURN)
+    {
+        freeAST(node->data.returnNode.expression);
+    }
+    if (node->type == NODE_BLOCK)
+    {
+        int totalCount = node->data.nodeBlock.totalCount;
+        for (int i = 0; i < totalCount; i++)
+        {
+            freeAST(node->data.nodeBlock.statements[i]);
+        }
+        free(node->data.nodeBlock.statements);
     }
 
     free(node);
