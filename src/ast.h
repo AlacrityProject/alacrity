@@ -84,6 +84,8 @@ typedef enum
 
     NODE_IF_ELSE,
 
+    NODE_WHILE,
+
     NODE_INCREMENT_DECREMENT,
 
     NODE_FUNCTION,
@@ -154,6 +156,12 @@ typedef struct AstNode
             struct AstNode *expression;
             struct AstNode *elseBody;
         } ifElse;
+
+        struct
+        {
+            struct AstNode *expression;
+            struct AstNode *body;
+        } whileNode;
 
         struct
         {
@@ -243,6 +251,7 @@ struct AstNode *parseExpression(Parser *parser, int minimumBindingPower);
 struct AstNode *parseDeclaration(Parser *parser);
 struct AstNode *parsePrint(Parser *parser);
 struct AstNode *parseIfElse(Parser *parser);
+struct AstNode *parseWhile(Parser *parser);
 struct AstNode *parseFunctionDeclaration(Parser *parser);
 struct AstNode *parseFunctionCall(Parser *parser);
 struct AstNode *parseBlock(Parser *parser);
@@ -255,6 +264,7 @@ struct AstNode *makeBinaryNode(int operator, struct AstNode * left, struct AstNo
 struct AstNode *makeDeclarationNode(Token tokenTypeKeyword, Token tokenName, ASTNode *expression);
 struct AstNode *makePrintNode(struct AstNode *expression);
 struct AstNode *makeIfElseNode(struct AstNode *expression, struct AstNode *ifBody, struct AstNode *elseBody);
+struct AstNode *makeWhileNode(struct AstNode *expression, struct AstNode *body);
 struct AstNode *makeIncrementDecrementNode(int operator, Token variable);
 struct AstNode *makeBlockNode(struct AstNode **statements, int totalCount);
 struct AstNode *makeFunctionNode(Token name, Token *parameters, Token *parameterTypes, int parameterCount, Token returnType, struct AstNode *body);

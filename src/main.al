@@ -10,3 +10,10 @@ int my_salary = 5000;
 int my_score = 95;
 int total_pay = calculate_bonus(my_salary, my_score);
 print(total_pay); // Expected: 5500
+
+int x = 0;
+
+while (x < 10) {
+    print(x);
+    x++;
+}

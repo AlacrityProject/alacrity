@@ -79,6 +79,11 @@ struct AstNode *parseStatement(Parser *parser)
         return parseReturn(parser);
     }
 
+    else if (currentToken.type == TOKEN_WHILE)
+    {
+        return parseWhile(parser);
+    }
+
     else
     {
         fprintf(stderr, "ERROR!\n Unknown token in parseStatement at index %d: %s\n",
@@ -181,6 +186,21 @@ struct AstNode *parseIfElse(Parser *parser)
     }
 
     struct AstNode *node = makeIfElseNode(expression, ifBody, elseBody);
+    return node;
+}
+
+struct AstNode *parseWhile(Parser *parser)
+{
+    advance(parser);
+    expect(parser, TOKEN_LEFT_PAREN);
+    struct AstNode *expression = parseExpression(parser, 0);
+    expect(parser, TOKEN_RIGHT_PAREN);
+    expect(parser, TOKEN_LEFT_CURLY_BRACKET);
+    struct AstNode *body = parseBlock(parser);
+    expect(parser, TOKEN_RIGHT_CURLY_BRACKET);
+
+    struct AstNode *node = makeWhileNode(expression, body);
+
     return node;
 }
 
@@ -354,6 +374,16 @@ struct AstNode *makeIfElseNode(struct AstNode *expression, struct AstNode *ifBod
     return node;
 }
 
+struct AstNode *makeWhileNode(struct AstNode *expression, struct AstNode *body)
+{
+    struct AstNode *node = malloc(sizeof(struct AstNode));
+    node->type = NODE_WHILE;
+    node->data.whileNode.expression = expression;
+    node->data.whileNode.body = body;
+
+    return node;
+}
+
 struct AstNode *makeBlockNode(struct AstNode **statements, int totalCount)
 {
     struct AstNode *node = malloc(sizeof(struct AstNode));
@@ -451,6 +481,10 @@ void printAST(ASTNode *node, int indent)
             printf(" ");
         }
         printf("PRINT:\n");
+        for (int i = 0; i < indent; i++)
+        {
+            printf(" ");
+        }
         printAST(node->data.print.expression, indent + 1);
     }
 
@@ -472,9 +506,25 @@ void printAST(ASTNode *node, int indent)
         printAST(node->data.ifElse.elseBody, indent + 1);
     }
 
+    if (node->type == NODE_WHILE)
+    {
+        printf("WHILE: \n");
+        printAST(node->data.whileNode.expression, indent + 1);
+        for (int i = 0; i < indent; i++)
+        {
+            printf(" ");
+        }
+        printf("THEN: \n");
+        printAST(node->data.whileNode.body, indent + 1);
+        for (int i = 0; i < indent; i++)
+        {
+            printf(" ");
+        }
+    }
+
     if (node->type == NODE_INCREMENT_DECREMENT)
     {
-        printf("%s  %.*s\n", getTokenType(node->data.incrementDecrement.operator), node->data.incrementDecrement.variable.value.length, node->data.incrementDecrement.variable.value.start);
+        printf("%s:  %.*s\n", getTokenType(node->data.incrementDecrement.operator), node->data.incrementDecrement.variable.value.length, node->data.incrementDecrement.variable.value.start);
     }
 
     if (node->type == NODE_FUNCTION)
@@ -695,6 +745,11 @@ void freeAST(ASTNode *node)
         freeAST(node->data.ifElse.expression);
         freeAST(node->data.ifElse.ifBody);
         freeAST(node->data.ifElse.elseBody);
+    }
+    if (node->type == NODE_WHILE)
+    {
+        freeAST(node->data.whileNode.expression);
+        freeAST(node->data.whileNode.body);
     }
     if (node->type == NODE_FUNCTION)
     {

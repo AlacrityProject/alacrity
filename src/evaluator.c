@@ -5,6 +5,11 @@
 #include <ctype.h>
 #include "ast.h"
 
+/*
+ TODO for store entry functions:
+    check using findEntry() if a variable already exists for reassignment.
+*/
+
 void storeEntry(SymbolTable *table, char variableName[], int valueToStore)
 {
     Entry entry;
@@ -167,6 +172,32 @@ int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, Re
         else if (ast->data.ifElse.elseBody != NULL)
         {
             evaluator(ast->data.ifElse.elseBody, table, functionTable, result);
+        }
+
+        if (result->returned)
+        {
+            return result->value;
+        }
+
+        return 0;
+    }
+
+    if (ast->type == NODE_WHILE)
+    {
+        int expression = evaluator(ast->data.whileNode.expression, table, functionTable, result);
+        if (result->returned)
+        {
+            return result->value;
+        }
+
+        while (expression == true)
+        {
+            evaluator(ast->data.whileNode.body, table, functionTable, result);
+            if (result->returned)
+            {
+                break;
+            }
+            expression = evaluator(ast->data.whileNode.expression, table, functionTable, result);
         }
 
         if (result->returned)

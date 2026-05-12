@@ -4,13 +4,14 @@
 
 int main()
 {
-    Keyword keywords[8] = {
+    Keyword keywords[9] = {
         {"variable", TOKEN_VARIABLE},
         {"print", TOKEN_PRINT},
         {"int", TOKEN_INT_TYPE},
         {"if", TOKEN_IF},
         {"else", TOKEN_ELSE},
         {"elif", TOKEN_ELIF},
+        {"while", TOKEN_WHILE},
         {"func", TOKEN_FUNC},
         {"return", TOKEN_RETURN},
     };
