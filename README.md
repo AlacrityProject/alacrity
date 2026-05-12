@@ -117,4 +117,3 @@ print(counter);  // 6
 
 * Implement loops:
     - For loops
-    - While loops
