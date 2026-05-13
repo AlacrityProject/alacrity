@@ -121,21 +121,27 @@ struct AstNode *parseExpression(Parser *parser, int minimumBindingPower)
 
     if (currentToken.type == TOKEN_INTEGER_LITERAL || currentToken.type == TOKEN_VARIABLE)
     {
+        struct AstNode *left;
+
         if (peekNext(parser).type == TOKEN_LEFT_PAREN)
         {
-            return parseFunctionCall(parser);
+            left = parseFunctionCall(parser);
         }
+        else
+        {
+            left = makeLiteralNode(advance(parser));
 
-        struct AstNode *left = makeLiteralNode(advance(parser));
+            currentToken = peek(parser);
+
+            if (currentToken.type == TOKEN_INCREMENT || currentToken.type == TOKEN_DECREMENT)
+            {
+                advance(parser);
+                struct AstNode *node = makeIncrementDecrementNode(currentToken.type, left->data.token);
+                return node;
+            }
+        }
 
         currentToken = peek(parser);
-
-        if (currentToken.type == TOKEN_INCREMENT || currentToken.type == TOKEN_DECREMENT)
-        {
-            advance(parser);
-            struct AstNode *node = makeIncrementDecrementNode(currentToken.type, left->data.token);
-            return node;
-        }
 
         while (isOperator(currentToken.type) && getTokenPrecedence(currentToken.type) > minimumBindingPower)
         {
