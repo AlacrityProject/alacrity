@@ -83,6 +83,7 @@ typedef enum
     NODE_BINARY,
 
     NODE_DECLARATION,
+    NODE_ASSIGNMENT,
 
     NODE_PRINT,
 
@@ -164,6 +165,12 @@ typedef struct AstNode
             Token name;
             struct AstNode *expression;
         } declaration;
+
+        struct
+        {
+            Token name;
+            struct AstNode *expression;
+        } assignment;
 
         struct
         {

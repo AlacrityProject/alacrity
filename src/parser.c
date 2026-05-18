@@ -65,6 +65,10 @@ struct AstNode *parseStatement(Parser *parser)
     }
     else if (currentToken.type == TOKEN_VARIABLE)
     {
+        if (peekNext(parser).type == TOKEN_EQUALS)
+        {
+            return parseAssignment(parser);
+        }
         struct AstNode *node = parseExpression(parser, 0);
         expect(parser, TOKEN_SEMICOLON);
         return node;
@@ -103,6 +107,17 @@ struct AstNode *parseDeclaration(Parser *parser)
 
     struct AstNode *node = makeDeclarationNode(tokenTypeKeyword, tokenName, expression);
 
+    return node;
+}
+
+struct AstNode *parseAssignment(Parser *parser)
+{
+    Token currentToken = peek(parser);
+    advance(parser);
+    advance(parser);
+    struct AstNode *expression = parseExpression(parser, 0);
+    expect(parser, TOKEN_SEMICOLON);
+    struct AstNode *node = makeAssignmentNode(currentToken, expression);
     return node;
 }
 
@@ -360,6 +375,16 @@ struct AstNode *makeDeclarationNode(Token tokenTypeKeyword, Token tokenName, str
     return node;
 }
 
+struct AstNode *makeAssignmentNode(Token tokenName, struct AstNode *expression)
+{
+    struct AstNode *node = malloc(sizeof(struct AstNode));
+    node->type = NODE_ASSIGNMENT;
+    node->data.assignment.name = tokenName;
+    node->data.assignment.expression = expression;
+
+    return node;
+}
+
 struct AstNode *makePrintNode(struct AstNode *expression)
 {
     struct AstNode *node = malloc(sizeof(struct AstNode));
@@ -480,6 +505,17 @@ void printAST(ASTNode *node, int indent)
         printAST(node->data.declaration.expression, indent + 1);
     }
 
+    if (node->type == NODE_ASSIGNMENT)
+    {
+        printf("ASSIGNMENT:");
+        for (int i = 0; i < indent; i++)
+        {
+            printf(" ");
+        }
+        printf("VARIABLE NAME: %.*s\n", node->data.assignment.name.value.length, node->data.assignment.name.value.start);
+        printAST(node->data.assignment.expression, indent + 1);
+    }
+
     if (node->type == NODE_PRINT)
     {
         for (int i = 0; i < indent; i++)
@@ -565,17 +601,17 @@ void printAST(ASTNode *node, int indent)
 
 bool isOperator(TokenType type)
 {
-    int operators[] = {TOKEN_EQUALS,
-                       TOKEN_ADD,
-                       TOKEN_SUBTRACT,
-                       TOKEN_MULTIPLY,
-                       TOKEN_DIVIDE,
-                       TOKEN_EQUAL_TO,
-                       TOKEN_LESS_THAN,
-                       TOKEN_GREATER_THAN,
-                       TOKEN_LESS_THAN_EQUAL_TO,
-                       TOKEN_GREATER_THAN_EQUAL_TO,
-                       TOKEN_NOT_EQUAL_TO};
+    int operators[] = {
+        TOKEN_ADD,
+        TOKEN_SUBTRACT,
+        TOKEN_MULTIPLY,
+        TOKEN_DIVIDE,
+        TOKEN_EQUAL_TO,
+        TOKEN_LESS_THAN,
+        TOKEN_GREATER_THAN,
+        TOKEN_LESS_THAN_EQUAL_TO,
+        TOKEN_GREATER_THAN_EQUAL_TO,
+        TOKEN_NOT_EQUAL_TO};
 
     int size = sizeof(operators) / sizeof(operators[0]);
     for (int i = 0; i < size; i++)
@@ -767,6 +803,10 @@ void freeAST(ASTNode *node)
     if (node->type == NODE_DECLARATION)
     {
         freeAST(node->data.declaration.expression);
+    }
+    if (node->type == NODE_ASSIGNMENT)
+    {
+        freeAST(node->data.assignment.expression);
     }
     if (node->type == NODE_PRINT)
     {

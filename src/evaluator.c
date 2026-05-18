@@ -5,11 +5,6 @@
 #include <ctype.h>
 #include "ast.h"
 
-/*
- TODO for store entry functions:
-    check using findEntry() if a variable already exists for reassignment.
-*/
-
 void storeEntry(SymbolTable *table, char variableName[], Value valueToStore)
 {
     Entry entry;
@@ -305,6 +300,25 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
         name[ast->data.declaration.name.value.length] = '\0';
         storeEntry(table, name, expression);
         return makeNullValue();
+    }
+
+    if (ast->type == NODE_ASSIGNMENT)
+    {
+        char name[100];
+        strncpy(name, ast->data.assignment.name.value.start, ast->data.assignment.name.value.length);
+        name[ast->data.assignment.name.value.length] = '\0';
+
+        Entry *entry = findEntry(table, name);
+
+        if (entry)
+        {
+            Value expression = evaluator(ast->data.assignment.expression, table, functionTable, result);
+            entry->value = expression;
+            return expression;
+        }
+
+        fprintf(stderr, "ERROR: Variable does not exist!");
+        exit(1);
     }
 
     if (ast->type == NODE_PRINT)
