@@ -10,7 +10,7 @@
     check using findEntry() if a variable already exists for reassignment.
 */
 
-void storeEntry(SymbolTable *table, char variableName[], int valueToStore)
+void storeEntry(SymbolTable *table, char variableName[], Value valueToStore)
 {
     Entry entry;
     strncpy(entry.name, variableName, strlen(variableName));
@@ -56,11 +56,171 @@ FunctionEntry *findFunctionEntry(FunctionTable *functionTable, char functionName
     return NULL;
 }
 
-int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, ReturnResult *result)
+Value makeIntValue(int number)
+{
+    Value intValue;
+    intValue.type = TYPE_INT;
+    intValue.as.int_value = number;
+    return intValue;
+}
+Value makeBoolValue(bool boolean)
+{
+    Value boolValue;
+    boolValue.type = TYPE_BOOL;
+    boolValue.as.bool_value = boolean;
+    return boolValue;
+}
+Value makeFloatValue(float number)
+{
+    Value floatValue;
+    floatValue.type = TYPE_FLOAT;
+    floatValue.as.float_value = number;
+    return floatValue;
+}
+Value makeStringValue(char *string)
+{
+    Value stringValue;
+    stringValue.type = TYPE_STRING;
+    stringValue.as.string_value = string;
+    return stringValue;
+}
+Value makeNullValue()
+{
+    Value NullValue;
+    NullValue.type = TYPE_NULL;
+    NullValue.as.int_value = 0;
+    return NullValue;
+}
+
+bool isTruthy(Value value)
+{
+    ValueType valueType = value.type;
+    switch (valueType)
+    {
+    case TYPE_BOOL:
+        return value.as.bool_value;
+    case TYPE_INT:
+        return value.as.int_value != 0;
+    case TYPE_FLOAT:
+        return value.as.float_value != 0.0;
+    case TYPE_STRING:
+        return value.as.string_value != NULL;
+    case TYPE_NULL:
+        return false;
+    default:
+        return false;
+    }
+}
+
+Value performFloatBinaryOp(float leftFloat, float rightFloat, int operator)
+{
+    switch (operator)
+    {
+    case TOKEN_ADD:
+        return makeFloatValue(leftFloat + rightFloat);
+    case TOKEN_SUBTRACT:
+        return makeFloatValue(leftFloat - rightFloat);
+    case TOKEN_MULTIPLY:
+        return makeFloatValue(leftFloat * rightFloat);
+    case TOKEN_DIVIDE:
+        return makeFloatValue(leftFloat / rightFloat);
+    case TOKEN_EQUAL_TO:
+        return makeBoolValue(leftFloat == rightFloat);
+    case TOKEN_LESS_THAN:
+        return makeBoolValue(leftFloat < rightFloat);
+    case TOKEN_GREATER_THAN:
+        return makeBoolValue(leftFloat > rightFloat);
+    case TOKEN_LESS_THAN_EQUAL_TO:
+        return makeBoolValue(leftFloat <= rightFloat);
+    case TOKEN_GREATER_THAN_EQUAL_TO:
+        return makeBoolValue(leftFloat >= rightFloat);
+    case TOKEN_NOT_EQUAL_TO:
+        return makeBoolValue(leftFloat != rightFloat);
+    default:
+        fprintf(stderr, "ERROR\n");
+        exit(1);
+    }
+}
+
+Value performBinaryOp(Value left, Value right, int operator)
+{
+    if (left.type == right.type)
+    {
+        switch (left.type)
+        {
+        case TYPE_INT:
+        {
+            int leftValue = left.as.int_value;
+            int rightValue = right.as.int_value;
+            switch (operator)
+            {
+            case TOKEN_ADD:
+                return makeIntValue(leftValue + rightValue);
+            case TOKEN_SUBTRACT:
+                return makeIntValue(leftValue - rightValue);
+            case TOKEN_MULTIPLY:
+                return makeIntValue(leftValue * rightValue);
+            case TOKEN_DIVIDE:
+                return makeIntValue(leftValue / rightValue);
+            case TOKEN_EQUAL_TO:
+                return makeBoolValue(leftValue == rightValue);
+            case TOKEN_LESS_THAN:
+                return makeBoolValue(leftValue < rightValue);
+            case TOKEN_GREATER_THAN:
+                return makeBoolValue(leftValue > rightValue);
+            case TOKEN_LESS_THAN_EQUAL_TO:
+                return makeBoolValue(leftValue <= rightValue);
+            case TOKEN_GREATER_THAN_EQUAL_TO:
+                return makeBoolValue(leftValue >= rightValue);
+            case TOKEN_NOT_EQUAL_TO:
+                return makeBoolValue(leftValue != rightValue);
+            }
+            break;
+        }
+        case TYPE_FLOAT:
+        {
+            float leftFloat = left.as.float_value;
+            float rightFloat = right.as.float_value;
+            return performFloatBinaryOp(leftFloat, rightFloat, operator);
+        }
+        case TYPE_BOOL:
+            switch (operator)
+            {
+            case TOKEN_EQUAL_TO:
+                return makeBoolValue(left.as.bool_value == right.as.bool_value);
+            case TOKEN_NOT_EQUAL_TO:
+                return makeBoolValue(left.as.bool_value != right.as.bool_value);
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    if ((left.type == TYPE_INT && right.type == TYPE_FLOAT))
+    {
+        float leftFloat = (float)left.as.int_value;
+        float rightFloat = right.as.float_value;
+
+        return performFloatBinaryOp(leftFloat, rightFloat, operator);
+    }
+    if ((left.type == TYPE_FLOAT && right.type == TYPE_INT))
+    {
+        float leftFloat = left.as.float_value;
+        float rightFloat = (float)right.as.int_value;
+        return performFloatBinaryOp(leftFloat, rightFloat, operator);
+    }
+
+    fprintf(stderr, "ERROR\n");
+    exit(1);
+}
+
+Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, ReturnResult *result)
 {
     if (ast == NULL)
     {
-        return 0;
+        return makeNullValue();
     }
 
     if (ast->type == NODE_LITERAL)
@@ -71,7 +231,23 @@ int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, Re
             strncpy(buffer, ast->data.token.value.start, ast->data.token.value.length);
             buffer[ast->data.token.value.length] = '\0';
 
-            return atoi(buffer);
+            return makeIntValue(atoi(buffer));
+        }
+        if (ast->data.token.type == TOKEN_FLOAT_LITERAL)
+        {
+            char buffer[100];
+            strncpy(buffer, ast->data.token.value.start, ast->data.token.value.length);
+            buffer[ast->data.token.value.length] = '\0';
+
+            return makeFloatValue(atof(buffer));
+        }
+        if (ast->data.token.type == TOKEN_BOOL_LITERAL_TRUE)
+        {
+            return makeBoolValue(true);
+        }
+        if (ast->data.token.type == TOKEN_BOOL_LITERAL_FALSE)
+        {
+            return makeBoolValue(false);
         }
         if (ast->data.token.type == TOKEN_VARIABLE)
         {
@@ -94,78 +270,80 @@ int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, Re
     if (ast->type == NODE_UNARY)
     {
         int operator = ast->data.unary.operator;
-        int value = evaluator(ast->data.unary.operand, table, functionTable, result);
+        Value value = evaluator(ast->data.unary.operand, table, functionTable, result);
+        ValueType valueType = value.type;
 
-        switch (operator)
+        if (valueType == TYPE_INT && operator == TOKEN_SUBTRACT)
         {
-        case TOKEN_SUBTRACT:
-            return -value;
-        case TOKEN_NOT:
-            return !value;
-        default:
-            break;
+            int intValue = value.as.int_value;
+            return makeIntValue(-intValue);
         }
+
+        if (valueType == TYPE_FLOAT && operator == TOKEN_SUBTRACT)
+        {
+            float floatValue = value.as.float_value;
+            return makeFloatValue(-floatValue);
+        }
+
+        return makeBoolValue(!isTruthy(value));
     }
 
     if (ast->type == NODE_BINARY)
     {
-        int left = evaluator(ast->data.binary.left, table, functionTable, result);
-        int right = evaluator(ast->data.binary.right, table, functionTable, result);
+        Value left = evaluator(ast->data.binary.left, table, functionTable, result);
+        Value right = evaluator(ast->data.binary.right, table, functionTable, result);
         int operator = ast->data.binary.operator;
 
-        switch (operator)
-        {
-        case TOKEN_ADD:
-            return left + right;
-        case TOKEN_SUBTRACT:
-            return left - right;
-        case TOKEN_MULTIPLY:
-            return left * right;
-        case TOKEN_DIVIDE:
-            return left / right;
-        case TOKEN_EQUAL_TO:
-            return left == right;
-        case TOKEN_LESS_THAN:
-            return left < right;
-        case TOKEN_GREATER_THAN:
-            return left > right;
-        case TOKEN_LESS_THAN_EQUAL_TO:
-            return left <= right;
-        case TOKEN_GREATER_THAN_EQUAL_TO:
-            return left >= right;
-        case TOKEN_NOT_EQUAL_TO:
-            return left != right;
-        default:
-            break;
-        }
+        return performBinaryOp(left, right, operator);
     }
 
     if (ast->type == NODE_DECLARATION)
     {
-        int expression = evaluator(ast->data.declaration.expression, table, functionTable, result);
+        Value expression = evaluator(ast->data.declaration.expression, table, functionTable, result);
         char name[100];
         strncpy(name, ast->data.declaration.name.value.start, ast->data.declaration.name.value.length);
         name[ast->data.declaration.name.value.length] = '\0';
         storeEntry(table, name, expression);
-        return 0;
+        return makeNullValue();
     }
 
     if (ast->type == NODE_PRINT)
     {
-        int expression = evaluator(ast->data.print.expression, table, functionTable, result);
-        printf("%d\n", expression);
-        return 0;
+        Value expression = evaluator(ast->data.print.expression, table, functionTable, result);
+
+        ValueType expressionType = expression.type;
+
+        switch (expressionType)
+        {
+        case TYPE_INT:
+            printf("%d\n", expression.as.int_value);
+            break;
+        case TYPE_FLOAT:
+            printf("%f\n", expression.as.float_value);
+            break;
+        case TYPE_STRING:
+            printf("%s\n", expression.as.string_value);
+            break;
+        case TYPE_BOOL:
+            printf("%d\n", expression.as.bool_value);
+            break;
+        case TYPE_NULL:
+            printf("NULL");
+            break;
+        }
+
+        return makeNullValue();
     }
 
     if (ast->type == NODE_IF_ELSE)
     {
-        int expression = evaluator(ast->data.ifElse.expression, table, functionTable, result);
+        Value expression = evaluator(ast->data.ifElse.expression, table, functionTable, result);
         if (result->returned)
         {
             return result->value;
         }
 
-        if (expression == true)
+        if (isTruthy(expression) == true)
         {
             evaluator(ast->data.ifElse.ifBody, table, functionTable, result);
         }
@@ -179,18 +357,18 @@ int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, Re
             return result->value;
         }
 
-        return 0;
+        return makeNullValue();
     }
 
     if (ast->type == NODE_WHILE)
     {
-        int expression = evaluator(ast->data.whileNode.expression, table, functionTable, result);
+        Value expression = evaluator(ast->data.whileNode.expression, table, functionTable, result);
         if (result->returned)
         {
             return result->value;
         }
 
-        while (expression == true)
+        while (isTruthy(expression) == true)
         {
             evaluator(ast->data.whileNode.body, table, functionTable, result);
             if (result->returned)
@@ -205,7 +383,7 @@ int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, Re
             return result->value;
         }
 
-        return 0;
+        return makeNullValue();
     }
 
     if (ast->type == NODE_INCREMENT_DECREMENT)
@@ -222,15 +400,15 @@ int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, Re
             exit(1);
         }
 
-        int entryValue = entry->value;
+        Value entryValue = entry->value;
 
         switch (operator)
         {
         case TOKEN_INCREMENT:
-            entryValue = entryValue + 1;
+            entryValue = makeIntValue(entryValue.as.int_value + 1);
             break;
         case TOKEN_DECREMENT:
-            entryValue = entryValue - 1;
+            entryValue = makeIntValue(entryValue.as.int_value - 1);
             break;
         default:
             break;
@@ -246,7 +424,7 @@ int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, Re
         name[ast->data.function.name.value.length] = '\0';
         storeFunctionEntry(functionTable, name, ast);
 
-        return 0;
+        return makeNullValue();
     }
 
     if (ast->type == NODE_FUNCTION_CALL)
@@ -269,7 +447,7 @@ int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, Re
 
         for (int i = 0; i < ast->data.functionCall.argumentCount; i++)
         {
-            int value = evaluator(ast->data.functionCall.arguments[i], table, functionTable, result);
+            Value value = evaluator(ast->data.functionCall.arguments[i], table, functionTable, result);
 
             char parameterName[100];
             Token parameterToken = node->data.function.parameters[i];
@@ -279,7 +457,9 @@ int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, Re
             storeEntry(&localTable, parameterName, value);
         }
 
-        ReturnResult localResult = {0, false};
+        ReturnResult localResult;
+        localResult.returned = false;
+        localResult.value = makeNullValue();
 
         evaluator(node->data.function.body, &localTable, functionTable, &localResult);
 
@@ -293,18 +473,18 @@ int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, Re
 
             if (result->returned)
             {
-                break;
+                return result->value;
             }
         }
-        return result->value;
+        return makeNullValue();
     }
     if (ast->type == NODE_RETURN)
     {
-        int expression = evaluator(ast->data.returnNode.expression, table, functionTable, result);
+        Value expression = evaluator(ast->data.returnNode.expression, table, functionTable, result);
         result->value = expression;
         result->returned = true;
         return expression;
     }
 
-    return 0;
+    return makeNullValue();
 }

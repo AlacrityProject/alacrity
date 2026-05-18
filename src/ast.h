@@ -37,13 +37,17 @@ typedef enum
     TOKEN_DIVIDE,
 
     // Values
-    TOKEN_STRING,
+    TOKEN_STRING_LITERAL,
     TOKEN_INTEGER_LITERAL,
+    TOKEN_FLOAT_LITERAL,
+    TOKEN_BOOL_LITERAL_TRUE,
+    TOKEN_BOOL_LITERAL_FALSE,
 
     // Types
     TOKEN_INT_TYPE,
     TOKEN_FLOAT_TYPE,
     TOKEN_BOOL_TYPE,
+    TOKEN_STRING_TYPE,
 
     // Keywords
     TOKEN_PRINT,
@@ -95,7 +99,29 @@ typedef enum
 
 } ASTNodeType;
 
+typedef enum
+{
+    TYPE_INT,
+    TYPE_FLOAT,
+    TYPE_BOOL,
+    TYPE_STRING,
+    TYPE_NULL
+} ValueType;
+
 // Struct Definitions
+typedef struct
+{
+    ValueType type;
+    union
+    {
+        int int_value;
+        double float_value;
+        bool bool_value;
+        char *string_value;
+    } as;
+
+} Value;
+
 typedef struct
 {
     char *start;
@@ -207,7 +233,7 @@ typedef struct
 typedef struct
 {
     char name[100];
-    int value;
+    Value value;
 } Entry;
 
 typedef struct
@@ -230,7 +256,7 @@ typedef struct
 
 typedef struct
 {
-    int value;
+    Value value;
     bool returned;
 } ReturnResult;
 
@@ -275,16 +301,28 @@ struct AstNode *makeReturnNode(struct AstNode *expression);
 void printAST(ASTNode *node, int indent);
 char *getTokenType(TokenType type);
 int getTokenPrecedence(TokenType type);
-int isOperator(TokenType type);
+bool isOperator(TokenType type);
+bool isLiteral(TokenType type);
 void freeAST(ASTNode *node);
 
 // Evaluator functions
 Entry *findEntry(SymbolTable *table, char variableName[]);
-void storeEntry(SymbolTable *table, char variableName[], int valueToStore);
+void storeEntry(SymbolTable *table, char variableName[], Value valueToStore);
 
 FunctionEntry *findFunctionEntry(FunctionTable *table, char functionName[]);
 void storeFunctionEntry(FunctionTable *table, char functionName[], struct AstNode *nodeToStore);
 
-int evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, ReturnResult *result);
+Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, ReturnResult *result);
+
+Value makeIntValue(int number);
+Value makeBoolValue(bool boolean);
+Value makeFloatValue(float number);
+Value makeStringValue(char *string);
+Value makeNullValue();
+
+bool isTruthy(Value value);
+
+Value performFloatBinaryOp(float leftFloat, float rightFloat, int operator);
+Value performBinaryOp(Value left, Value right, int operator);
 
 #endif

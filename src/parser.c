@@ -119,7 +119,7 @@ struct AstNode *parseExpression(Parser *parser, int minimumBindingPower)
         return unaryNode;
     }
 
-    if (currentToken.type == TOKEN_INTEGER_LITERAL || currentToken.type == TOKEN_VARIABLE)
+    if (isLiteral(currentToken.type) || currentToken.type == TOKEN_VARIABLE)
     {
         struct AstNode *left;
 
@@ -563,7 +563,7 @@ void printAST(ASTNode *node, int indent)
     }
 }
 
-int isOperator(TokenType type)
+bool isOperator(TokenType type)
 {
     int operators[] = {TOKEN_EQUALS,
                        TOKEN_ADD,
@@ -582,10 +582,28 @@ int isOperator(TokenType type)
     {
         if (operators[i] == type)
         {
-            return 1;
+            return true;
         }
     }
-    return 0;
+    return false;
+}
+
+bool isLiteral(TokenType type)
+{
+    int literals[] = {TOKEN_INTEGER_LITERAL,
+                      TOKEN_FLOAT_LITERAL,
+                      TOKEN_BOOL_LITERAL_TRUE,
+                      TOKEN_BOOL_LITERAL_FALSE,
+                      TOKEN_STRING_LITERAL};
+    int size = sizeof(literals) / sizeof(literals[0]);
+    for (int i = 0; i < size; i++)
+    {
+        if (literals[i] == type)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 char *getTokenType(TokenType type)
@@ -645,10 +663,16 @@ char *getTokenType(TokenType type)
         return "DIVIDE";
 
     // Values
-    case TOKEN_STRING:
-        return "STRING";
+    case TOKEN_STRING_LITERAL:
+        return "STRING LITERAL";
     case TOKEN_INTEGER_LITERAL:
         return "INTEGER LITERAL";
+    case TOKEN_FLOAT_LITERAL:
+        return "FLOAT LITERAL";
+    case TOKEN_BOOL_LITERAL_TRUE:
+        return "TRUE";
+    case TOKEN_BOOL_LITERAL_FALSE:
+        return "FALSE";
 
     // Types
     case TOKEN_INT_TYPE:
@@ -657,6 +681,8 @@ char *getTokenType(TokenType type)
         return "FLOAT TYPE";
     case TOKEN_BOOL_TYPE:
         return "BOOL TYPE";
+    case TOKEN_STRING_TYPE:
+        return "STRING TYPE";
 
     // Keywords
     case TOKEN_PRINT:

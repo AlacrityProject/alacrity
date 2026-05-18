@@ -4,16 +4,26 @@
 
 int main()
 {
-    Keyword keywords[9] = {
+    Keyword keywords[15] = {
         {"variable", TOKEN_VARIABLE},
-        {"print", TOKEN_PRINT},
+
+        {"bool", TOKEN_BOOL_TYPE},
         {"int", TOKEN_INT_TYPE},
+        {"string", TOKEN_STRING_TYPE},
+        {"float", TOKEN_FLOAT_TYPE},
+
+        {"print", TOKEN_PRINT},
         {"if", TOKEN_IF},
         {"else", TOKEN_ELSE},
         {"elif", TOKEN_ELIF},
         {"while", TOKEN_WHILE},
         {"func", TOKEN_FUNC},
         {"return", TOKEN_RETURN},
+        {"NULL", TOKEN_NULL},
+
+        {"true", TOKEN_BOOL_LITERAL_TRUE},
+        {"false", TOKEN_BOOL_LITERAL_FALSE},
+
     };
     int numberOfKeywords = sizeof(keywords) / sizeof(keywords[0]);
 
@@ -45,7 +55,9 @@ int main()
 
     SymbolTable table = {0};
     FunctionTable functionTable = {0};
-    ReturnResult result = {0, false};
+    ReturnResult result;
+    result.returned = false;
+    result.value = makeNullValue();
 
     // Parser Initialization
     Parser parser;

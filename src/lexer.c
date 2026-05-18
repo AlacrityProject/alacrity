@@ -246,7 +246,7 @@ int tokenize(char source[], Token tokens[])
             while (source[closer] != '"' && source[closer] != '\0')
                 closer++;
 
-            tokens[tokenCount].type = TOKEN_STRING;
+            tokens[tokenCount].type = TOKEN_STRING_LITERAL;
             tokens[tokenCount].value.start = &source[startIndex];
             tokens[tokenCount].value.length = closer - startIndex;
 
@@ -282,11 +282,28 @@ int tokenize(char source[], Token tokens[])
             {
                 int startIndex = i;
                 int closer = startIndex;
+                bool isFloat = false;
 
                 while (isdigit(source[closer]))
                     closer++;
 
-                tokens[tokenCount].type = TOKEN_INTEGER_LITERAL;
+                if (source[closer] == '.')
+                {
+                    isFloat = true;
+                    closer++;
+                    while (isdigit(source[closer]))
+                        closer++;
+                }
+
+                if (isFloat)
+                {
+                    tokens[tokenCount].type = TOKEN_FLOAT_LITERAL;
+                }
+                else
+                {
+                    tokens[tokenCount].type = TOKEN_INTEGER_LITERAL;
+                }
+
                 tokens[tokenCount].value.start = &source[startIndex];
                 tokens[tokenCount].value.length = closer - startIndex;
 
