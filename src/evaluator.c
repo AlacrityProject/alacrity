@@ -107,6 +107,18 @@ bool isTruthy(Value value)
     }
 }
 
+void freeValue(Value value)
+{
+    switch (value.type)
+    {
+    case TYPE_STRING:
+        free(value.as.string_value);
+        break;
+    default:
+        break;
+    }
+}
+
 Value performFloatBinaryOp(float leftFloat, float rightFloat, int operator)
 {
     switch (operator)
@@ -236,6 +248,16 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
 
             return makeFloatValue(atof(buffer));
         }
+        if (ast->data.token.type == TOKEN_STRING_LITERAL)
+        {
+            char *stringMemory = (char *)malloc(sizeof(char) * (ast->data.token.value.length + 1));
+
+            strncpy(stringMemory, ast->data.token.value.start, ast->data.token.value.length);
+            stringMemory[ast->data.token.value.length] = '\0';
+
+            return makeStringValue(stringMemory);
+        }
+
         if (ast->data.token.type == TOKEN_BOOL_LITERAL_TRUE)
         {
             return makeBoolValue(true);
@@ -313,6 +335,7 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
         if (entry)
         {
             Value expression = evaluator(ast->data.assignment.expression, table, functionTable, result);
+            freeValue(entry->value);
             entry->value = expression;
             return expression;
         }
@@ -476,6 +499,15 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
         localResult.value = makeNullValue();
 
         evaluator(node->data.function.body, &localTable, functionTable, &localResult);
+
+        for (int i = 0; i < localTable.totalCount; i++)
+        {
+            if (localResult.value.type == TYPE_STRING && localTable.entries[i].value.type == TYPE_STRING && localTable.entries[i].value.as.string_value == localResult.value.as.string_value)
+            {
+                continue;
+            }
+            freeValue(localTable.entries[i].value);
+        }
 
         return localResult.value;
     }

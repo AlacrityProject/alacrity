@@ -13,7 +13,11 @@ print(total_pay); // Expected: 5500
 
 int x = 0;
 
+string my_string = "Hello World";
+
 while (x < 10) {
     print(x);
     x++;
 }
+
+print(my_string);

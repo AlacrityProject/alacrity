@@ -95,6 +95,11 @@ int main()
         evaluator(asts[i], &table, &functionTable, &result);
     }
 
+    for (int i = 0; i < table.totalCount; i++)
+    {
+        freeValue(table.entries[i].value);
+    }
+
     // Free ASTs
     for (int i = 0; i < size; i++)
     {

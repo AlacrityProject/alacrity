@@ -282,6 +282,7 @@ Token expect(Parser *parser, TokenType type);
 struct AstNode *parseStatement(Parser *parser);
 struct AstNode *parseExpression(Parser *parser, int minimumBindingPower);
 struct AstNode *parseDeclaration(Parser *parser);
+struct AstNode *parseAssignment(Parser *parser);
 struct AstNode *parsePrint(Parser *parser);
 struct AstNode *parseIfElse(Parser *parser);
 struct AstNode *parseWhile(Parser *parser);
@@ -295,6 +296,7 @@ struct AstNode *makeLiteralNode(Token token);
 struct AstNode *makeUnaryNode(Token operator, struct AstNode * operand);
 struct AstNode *makeBinaryNode(int operator, struct AstNode * left, struct AstNode *right);
 struct AstNode *makeDeclarationNode(Token tokenTypeKeyword, Token tokenName, ASTNode *expression);
+struct AstNode *makeAssignmentNode(Token tokenName, struct AstNode *expression);
 struct AstNode *makePrintNode(struct AstNode *expression);
 struct AstNode *makeIfElseNode(struct AstNode *expression, struct AstNode *ifBody, struct AstNode *elseBody);
 struct AstNode *makeWhileNode(struct AstNode *expression, struct AstNode *body);
@@ -328,6 +330,7 @@ Value makeStringValue(char *string);
 Value makeNullValue();
 
 bool isTruthy(Value value);
+void freeValue(Value value);
 
 Value performFloatBinaryOp(float leftFloat, float rightFloat, int operator);
 Value performBinaryOp(Value left, Value right, int operator);

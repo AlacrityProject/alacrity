@@ -41,17 +41,11 @@ Token expect(Parser *parser, TokenType type) // Calls advance but errors out if 
     return token;
 }
 
-// PARSE
-// Add:
-// parseStatement - peeks at at current token and decides which parse to call
-// parsePrint
-// parseIf
-
 struct AstNode *parseStatement(Parser *parser)
 {
     Token currentToken = peek(parser);
 
-    if (currentToken.type == TOKEN_INT_TYPE || currentToken.type == TOKEN_FLOAT_TYPE || currentToken.type == TOKEN_BOOL_TYPE)
+    if (currentToken.type == TOKEN_INT_TYPE || currentToken.type == TOKEN_FLOAT_TYPE || currentToken.type == TOKEN_BOOL_TYPE || currentToken.type == TOKEN_STRING_TYPE)
     {
         return parseDeclaration(parser);
     }
