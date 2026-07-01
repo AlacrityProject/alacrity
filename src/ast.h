@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+extern char *source;
+
 // Enum definitions
 typedef enum
 {
@@ -133,6 +135,7 @@ typedef struct
 {
     TokenType type;
     TokenValue value;
+    int line;
 } Token;
 
 typedef struct
@@ -148,7 +151,7 @@ typedef struct AstNode
     {
         struct
         {
-            int operator;
+            Token operator;
             struct AstNode *operand;
         } unary;
 
@@ -156,7 +159,7 @@ typedef struct AstNode
         {
             struct AstNode *left;
             struct AstNode *right;
-            int operator;
+            Token operator;
         } binary;
 
         struct
@@ -175,7 +178,7 @@ typedef struct AstNode
         struct
         {
             Token variable;
-            int operator;
+            Token operator;
         } incrementDecrement;
 
         struct
@@ -269,6 +272,7 @@ typedef struct
 
 // Lexer functions
 char *readFile(char filename[]);
+void printErrorLine(Token token);
 int tokenize(char source[], Token tokens[]);
 int determine_identifier(char *token, int length, Keyword keywords[], int numberOfKeywords);
 
@@ -294,13 +298,13 @@ struct AstNode *parseReturn(Parser *parser);
 // Node Creation functions
 struct AstNode *makeLiteralNode(Token token);
 struct AstNode *makeUnaryNode(Token operator, struct AstNode * operand);
-struct AstNode *makeBinaryNode(int operator, struct AstNode * left, struct AstNode *right);
-struct AstNode *makeDeclarationNode(Token tokenTypeKeyword, Token tokenName, ASTNode *expression);
+struct AstNode *makeBinaryNode(Token operator, struct AstNode * left, struct AstNode *right);
+struct AstNode *makeDeclarationNode(Token tokenTypeKeyword, Token tokenName, struct AstNode *expression);
 struct AstNode *makeAssignmentNode(Token tokenName, struct AstNode *expression);
 struct AstNode *makePrintNode(struct AstNode *expression);
 struct AstNode *makeIfElseNode(struct AstNode *expression, struct AstNode *ifBody, struct AstNode *elseBody);
 struct AstNode *makeWhileNode(struct AstNode *expression, struct AstNode *body);
-struct AstNode *makeIncrementDecrementNode(int operator, Token variable);
+struct AstNode *makeIncrementDecrementNode(Token operator, Token variable);
 struct AstNode *makeBlockNode(struct AstNode **statements, int totalCount);
 struct AstNode *makeFunctionNode(Token name, Token *parameters, Token *parameterTypes, int parameterCount, Token returnType, struct AstNode *body);
 struct AstNode *makeFunctionCallNode(Token name, struct AstNode **arguments, int argumentCount);
@@ -332,7 +336,7 @@ Value makeNullValue();
 bool isTruthy(Value value);
 void freeValue(Value value);
 
-Value performFloatBinaryOp(float leftFloat, float rightFloat, int operator);
-Value performBinaryOp(Value left, Value right, int operator);
+Value performFloatBinaryOp(float leftFloat, float rightFloat, Token operator);
+Value performBinaryOp(Value left, Value right, Token operator);
 
 #endif

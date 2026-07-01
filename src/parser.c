@@ -35,6 +35,7 @@ Token expect(Parser *parser, TokenType type) // Calls advance but errors out if 
     if (token.type != type)
     {
         fprintf(stderr, "ERROR!\n Expected type: %s Got: %s\n", getTokenType(type), getTokenType(token.type));
+        printErrorLine(token);
         exit(1);
     }
 
@@ -86,6 +87,7 @@ struct AstNode *parseStatement(Parser *parser)
     {
         fprintf(stderr, "ERROR!\n Unknown token in parseStatement at index %d: %s\n",
                 parser->currentToken, getTokenType(peek(parser).type));
+        printErrorLine(currentToken);
         exit(1);
     }
 }
@@ -145,7 +147,7 @@ struct AstNode *parseExpression(Parser *parser, int minimumBindingPower)
             if (currentToken.type == TOKEN_INCREMENT || currentToken.type == TOKEN_DECREMENT)
             {
                 advance(parser);
-                struct AstNode *node = makeIncrementDecrementNode(currentToken.type, left->data.token);
+                struct AstNode *node = makeIncrementDecrementNode(currentToken, left->data.token);
                 return node;
             }
         }
@@ -157,7 +159,7 @@ struct AstNode *parseExpression(Parser *parser, int minimumBindingPower)
             Token operatorToken = advance(parser);
             int operatorPrecendence = getTokenPrecedence(operatorToken.type);
             struct AstNode *right = parseExpression(parser, operatorPrecendence);
-            left = makeBinaryNode(operatorToken.type, left, right);
+            left = makeBinaryNode(operatorToken, left, right);
             currentToken = peek(parser);
         }
         return left;
@@ -334,12 +336,12 @@ struct AstNode *makeUnaryNode(Token operator, struct AstNode *operand)
 {
     struct AstNode *node = malloc(sizeof(struct AstNode));
     node->type = NODE_UNARY;
-    node->data.unary.operator = operator.type;
+    node->data.unary.operator = operator;
     node->data.unary.operand = operand;
     return node;
 }
 
-struct AstNode *makeBinaryNode(int operator, struct AstNode *left, struct AstNode *right)
+struct AstNode *makeBinaryNode(Token operator, struct AstNode *left, struct AstNode *right)
 {
     struct AstNode *node = malloc(sizeof(struct AstNode));
     node->type = NODE_BINARY;
@@ -349,7 +351,7 @@ struct AstNode *makeBinaryNode(int operator, struct AstNode *left, struct AstNod
     return node;
 }
 
-struct AstNode *makeIncrementDecrementNode(int operator, Token variable)
+struct AstNode *makeIncrementDecrementNode(Token operator, Token variable)
 {
     struct AstNode *node = malloc(sizeof(struct AstNode));
     node->type = NODE_INCREMENT_DECREMENT;
@@ -473,13 +475,13 @@ void printAST(ASTNode *node, int indent)
 
     if (node->type == NODE_BINARY)
     {
-        printf("BINARY: %s\n", getTokenType(node->data.binary.operator));
+        printf("BINARY: %s\n", getTokenType(node->data.binary.operator.type));
         printAST(node->data.binary.left, indent + 1);
         printAST(node->data.binary.right, indent + 1);
     }
     if (node->type == NODE_UNARY)
     {
-        printf("UNARY: %s\n", getTokenType(node->data.unary.operator));
+        printf("UNARY: %s\n", getTokenType(node->data.unary.operator.type));
         printAST(node->data.unary.operand, indent + 1);
     }
 
@@ -560,7 +562,7 @@ void printAST(ASTNode *node, int indent)
 
     if (node->type == NODE_INCREMENT_DECREMENT)
     {
-        printf("%s:  %.*s\n", getTokenType(node->data.incrementDecrement.operator), node->data.incrementDecrement.variable.value.length, node->data.incrementDecrement.variable.value.start);
+        printf("%s:  %.*s\n", getTokenType(node->data.incrementDecrement.operator.type), node->data.incrementDecrement.variable.value.length, node->data.incrementDecrement.variable.value.start);
     }
 
     if (node->type == NODE_FUNCTION)

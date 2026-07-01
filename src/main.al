@@ -1,23 +1,42 @@
-func calculate_bonus(int salary, int performance_score) -> int {
-    if (performance_score > 80) {
-        int base_bonus = 500;
-        return salary + base_bonus;
-    }
-    return salary;
-}
+// Variable declarations
+int x = 10;
+int y = 3;
+float pi = 3.14;
+string greeting = "Hello World";
+bool flag = true;
 
-int my_salary = 5000;
-int my_score = 95;
-int total_pay = calculate_bonus(my_salary, my_score);
-print(total_pay); // Expected: 5500
+// Print statements
+print(greeting);
+print(x + y);
+print(x * y);
+print(pi);
 
-int x = 0;
-
-string my_string = "Hello World";
-
-while (x < 10) {
+// Comparisons and if/elif/else
+if (x > y) {
     print(x);
-    x++;
+}
+elif (x == y) {
+    print(0);
+}
+else {
+    print(y);
 }
 
-print(my_string);
+// While loop with increment
+int counter = 0;
+while (counter < 5) {
+    print(counter);
+    counter++;
+}
+
+// Functions
+func multiply(int a, int b) -> int {
+    return a * b;
+}
+
+int result = multiply(x, y);
+print(result);
+
+// Variable reassignment
+x = x + 100;
+print(x);

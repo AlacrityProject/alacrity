@@ -4,6 +4,8 @@
 #include <ctype.h>
 #include "ast.h"
 
+char *source;
+
 char *readFile(char filename[])
 {
     FILE *pFile = fopen(filename, "r");
@@ -24,9 +26,33 @@ char *readFile(char filename[])
     return buffer;
 }
 
+void printErrorLine(Token token)
+{
+    // walk backwards from token.start to find line beginning
+    // walk forwards from token.start to find line end
+    // print the line number
+    // print the source line between those two points
+
+    char *lineStart = token.value.start;
+    while (lineStart > source && *(lineStart - 1) != '\n')
+    {
+        lineStart--;
+    }
+
+    char *lineEnd = token.value.start;
+    while (*lineEnd != '\n' && *lineEnd != '\0')
+    {
+        lineEnd++;
+    }
+
+    fprintf(stderr, "Line %d:\n", token.line);
+    fprintf(stderr, "   %.*s\n", (int)(lineEnd - lineStart), lineStart);
+}
+
 int tokenize(char source[], Token tokens[])
 {
     int tokenCount = 0;
+    int currentLine = 1;
 
     for (int i = 0; source[i] != '\0'; i++)
     {
@@ -34,6 +60,7 @@ int tokenize(char source[], Token tokens[])
         {
         case ';':
             tokens[tokenCount].type = TOKEN_SEMICOLON;
+            tokens[tokenCount].line = currentLine;
             tokens[tokenCount].value.start = &source[i];
             tokens[tokenCount].value.length = 1;
 
@@ -42,6 +69,7 @@ int tokenize(char source[], Token tokens[])
 
         case ',':
             tokens[tokenCount].type = TOKEN_COMMA;
+            tokens[tokenCount].line = currentLine;
             tokens[tokenCount].value.start = &source[i];
             tokens[tokenCount].value.length = 1;
 
@@ -50,6 +78,7 @@ int tokenize(char source[], Token tokens[])
 
         case '(':
             tokens[tokenCount].type = TOKEN_LEFT_PAREN;
+            tokens[tokenCount].line = currentLine;
             tokens[tokenCount].value.start = &source[i];
             tokens[tokenCount].value.length = 1;
 
@@ -58,6 +87,7 @@ int tokenize(char source[], Token tokens[])
 
         case ')':
             tokens[tokenCount].type = TOKEN_RIGHT_PAREN;
+            tokens[tokenCount].line = currentLine;
             tokens[tokenCount].value.start = &source[i];
             tokens[tokenCount].value.length = 1;
 
@@ -66,6 +96,7 @@ int tokenize(char source[], Token tokens[])
 
         case '{':
             tokens[tokenCount].type = TOKEN_LEFT_CURLY_BRACKET;
+            tokens[tokenCount].line = currentLine;
             tokens[tokenCount].value.start = &source[i];
             tokens[tokenCount].value.length = 1;
 
@@ -74,6 +105,7 @@ int tokenize(char source[], Token tokens[])
 
         case '}':
             tokens[tokenCount].type = TOKEN_RIGHT_CURLY_BRACKET;
+            tokens[tokenCount].line = currentLine;
             tokens[tokenCount].value.start = &source[i];
             tokens[tokenCount].value.length = 1;
 
@@ -84,6 +116,7 @@ int tokenize(char source[], Token tokens[])
             if (source[i + 1] == '=')
             {
                 tokens[tokenCount].type = TOKEN_EQUAL_TO;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 2;
                 i++;
@@ -92,6 +125,7 @@ int tokenize(char source[], Token tokens[])
             else
             {
                 tokens[tokenCount].type = TOKEN_EQUALS;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 1;
             }
@@ -102,6 +136,7 @@ int tokenize(char source[], Token tokens[])
             if (source[i + 1] == '+')
             {
                 tokens[tokenCount].type = TOKEN_INCREMENT;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 2;
                 i++;
@@ -110,6 +145,7 @@ int tokenize(char source[], Token tokens[])
             else
             {
                 tokens[tokenCount].type = TOKEN_ADD;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 1;
             }
@@ -120,6 +156,7 @@ int tokenize(char source[], Token tokens[])
             if (source[i + 1] == '-')
             {
                 tokens[tokenCount].type = TOKEN_DECREMENT;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 2;
                 i++;
@@ -128,6 +165,7 @@ int tokenize(char source[], Token tokens[])
             else if (source[i + 1] == '>')
             {
                 tokens[tokenCount].type = TOKEN_ARROW;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 2;
                 i++;
@@ -136,6 +174,7 @@ int tokenize(char source[], Token tokens[])
             else
             {
                 tokens[tokenCount].type = TOKEN_SUBTRACT;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 1;
             }
@@ -146,6 +185,7 @@ int tokenize(char source[], Token tokens[])
             if (source[i + 1] == '*')
             {
                 tokens[tokenCount].type = TOKEN_DOUBLE_ASTERISK;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 2;
                 i++;
@@ -154,6 +194,7 @@ int tokenize(char source[], Token tokens[])
             else
             {
                 tokens[tokenCount].type = TOKEN_MULTIPLY;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 1;
             }
@@ -177,6 +218,7 @@ int tokenize(char source[], Token tokens[])
             else
             {
                 tokens[tokenCount].type = TOKEN_DIVIDE;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 1;
                 tokenCount++;
@@ -188,6 +230,7 @@ int tokenize(char source[], Token tokens[])
             if (source[i + 1] == '=')
             {
                 tokens[tokenCount].type = TOKEN_LESS_THAN_EQUAL_TO;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 2;
                 i++;
@@ -196,6 +239,7 @@ int tokenize(char source[], Token tokens[])
             else
             {
                 tokens[tokenCount].type = TOKEN_LESS_THAN;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 1;
             }
@@ -206,6 +250,7 @@ int tokenize(char source[], Token tokens[])
             if (source[i + 1] == '=')
             {
                 tokens[tokenCount].type = TOKEN_GREATER_THAN_EQUAL_TO;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 2;
                 i++;
@@ -214,6 +259,7 @@ int tokenize(char source[], Token tokens[])
             else
             {
                 tokens[tokenCount].type = TOKEN_GREATER_THAN;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 1;
             }
@@ -224,6 +270,7 @@ int tokenize(char source[], Token tokens[])
             if (source[i + 1] == '=')
             {
                 tokens[tokenCount].type = TOKEN_NOT_EQUAL_TO;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 2;
                 i++;
@@ -232,6 +279,7 @@ int tokenize(char source[], Token tokens[])
             else
             {
                 tokens[tokenCount].type = TOKEN_NOT;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[i];
                 tokens[tokenCount].value.length = 1;
             }
@@ -247,6 +295,7 @@ int tokenize(char source[], Token tokens[])
                 closer++;
 
             tokens[tokenCount].type = TOKEN_STRING_LITERAL;
+            tokens[tokenCount].line = currentLine;
             tokens[tokenCount].value.start = &source[startIndex];
             tokens[tokenCount].value.length = closer - startIndex;
 
@@ -258,6 +307,7 @@ int tokenize(char source[], Token tokens[])
         case ' ':
             break;
         case '\n':
+            currentLine++;
             break;
         default:
             if (isalpha(source[i]) || source[i] == '_')
@@ -269,6 +319,7 @@ int tokenize(char source[], Token tokens[])
                     closer++;
 
                 tokens[tokenCount].type = TOKEN_IDENTIFIER;
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[startIndex];
                 tokens[tokenCount].value.length = closer - startIndex;
 
@@ -304,6 +355,7 @@ int tokenize(char source[], Token tokens[])
                     tokens[tokenCount].type = TOKEN_INTEGER_LITERAL;
                 }
 
+                tokens[tokenCount].line = currentLine;
                 tokens[tokenCount].value.start = &source[startIndex];
                 tokens[tokenCount].value.length = closer - startIndex;
 

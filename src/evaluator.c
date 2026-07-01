@@ -119,9 +119,9 @@ void freeValue(Value value)
     }
 }
 
-Value performFloatBinaryOp(float leftFloat, float rightFloat, int operator)
+Value performFloatBinaryOp(float leftFloat, float rightFloat, Token operator)
 {
-    switch (operator)
+    switch (operator.type)
     {
     case TOKEN_ADD:
         return makeFloatValue(leftFloat + rightFloat);
@@ -145,11 +145,12 @@ Value performFloatBinaryOp(float leftFloat, float rightFloat, int operator)
         return makeBoolValue(leftFloat != rightFloat);
     default:
         fprintf(stderr, "ERROR\n");
+        printErrorLine(operator);
         exit(1);
     }
 }
 
-Value performBinaryOp(Value left, Value right, int operator)
+Value performBinaryOp(Value left, Value right, Token operator)
 {
     if (left.type == right.type)
     {
@@ -159,7 +160,7 @@ Value performBinaryOp(Value left, Value right, int operator)
         {
             int leftValue = left.as.int_value;
             int rightValue = right.as.int_value;
-            switch (operator)
+            switch (operator.type)
             {
             case TOKEN_ADD:
                 return makeIntValue(leftValue + rightValue);
@@ -181,6 +182,8 @@ Value performBinaryOp(Value left, Value right, int operator)
                 return makeBoolValue(leftValue >= rightValue);
             case TOKEN_NOT_EQUAL_TO:
                 return makeBoolValue(leftValue != rightValue);
+            default:
+                break;
             }
             break;
         }
@@ -191,12 +194,14 @@ Value performBinaryOp(Value left, Value right, int operator)
             return performFloatBinaryOp(leftFloat, rightFloat, operator);
         }
         case TYPE_BOOL:
-            switch (operator)
+            switch (operator.type)
             {
             case TOKEN_EQUAL_TO:
                 return makeBoolValue(left.as.bool_value == right.as.bool_value);
             case TOKEN_NOT_EQUAL_TO:
                 return makeBoolValue(left.as.bool_value != right.as.bool_value);
+            default:
+                break;
             }
             break;
 
@@ -220,6 +225,7 @@ Value performBinaryOp(Value left, Value right, int operator)
     }
 
     fprintf(stderr, "ERROR\n");
+    printErrorLine(operator);
     exit(1);
 }
 
@@ -277,6 +283,7 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
             if (entry == NULL)
             {
                 fprintf(stderr, "ERROR!\n Cannot find entry for variable name: %s\n", name);
+                printErrorLine(ast->data.token);
                 exit(1);
             }
 
@@ -286,17 +293,17 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
 
     if (ast->type == NODE_UNARY)
     {
-        int operator = ast->data.unary.operator;
+        Token operator = ast->data.unary.operator;
         Value value = evaluator(ast->data.unary.operand, table, functionTable, result);
         ValueType valueType = value.type;
 
-        if (valueType == TYPE_INT && operator == TOKEN_SUBTRACT)
+        if (valueType == TYPE_INT && operator.type == TOKEN_SUBTRACT)
         {
             int intValue = value.as.int_value;
             return makeIntValue(-intValue);
         }
 
-        if (valueType == TYPE_FLOAT && operator == TOKEN_SUBTRACT)
+        if (valueType == TYPE_FLOAT && operator.type == TOKEN_SUBTRACT)
         {
             float floatValue = value.as.float_value;
             return makeFloatValue(-floatValue);
@@ -309,7 +316,7 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
     {
         Value left = evaluator(ast->data.binary.left, table, functionTable, result);
         Value right = evaluator(ast->data.binary.right, table, functionTable, result);
-        int operator = ast->data.binary.operator;
+        Token operator = ast->data.binary.operator;
 
         return performBinaryOp(left, right, operator);
     }
@@ -341,6 +348,7 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
         }
 
         fprintf(stderr, "ERROR: Variable does not exist!");
+        printErrorLine(ast->data.assignment.name);
         exit(1);
     }
 
@@ -425,7 +433,7 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
 
     if (ast->type == NODE_INCREMENT_DECREMENT)
     {
-        int operator = ast->data.incrementDecrement.operator;
+        Token operator = ast->data.incrementDecrement.operator;
         char name[100];
         strncpy(name, ast->data.incrementDecrement.variable.value.start, ast->data.incrementDecrement.variable.value.length);
         name[ast->data.incrementDecrement.variable.value.length] = '\0';
@@ -434,12 +442,13 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
         if (entry == NULL)
         {
             fprintf(stderr, "ERROR!\n Cannot find entry for variable name: %s\n", name);
+            printErrorLine(ast->data.incrementDecrement.variable);
             exit(1);
         }
 
         Value entryValue = entry->value;
 
-        switch (operator)
+        switch (operator.type)
         {
         case TOKEN_INCREMENT:
             entryValue = makeIntValue(entryValue.as.int_value + 1);
@@ -474,6 +483,7 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
         if (functionEntry == NULL)
         {
             fprintf(stderr, "ERROR!\n Cannot find function entry for function name: %s\n", name);
+            printErrorLine(ast->data.functionCall.name);
             exit(1);
         }
 

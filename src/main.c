@@ -28,7 +28,7 @@ int main()
     int numberOfKeywords = sizeof(keywords) / sizeof(keywords[0]);
 
     // Read source code
-    char *source = readFile("src/main.al");
+    source = readFile("src/main.al");
     if (source == NULL)
         return 1;
 
