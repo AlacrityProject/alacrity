@@ -4,8 +4,8 @@
 #include <ctype.h>
 #include "ast.h"
 
-// MAIN PARSING FUNCTIONS
-Token peek(Parser *parser) // Returns the current token without moving
+// Returns the current token without moving
+Token peek(Parser *parser)
 {
     return parser->tokens[parser->currentToken];
 }
@@ -19,7 +19,8 @@ Token peekNext(Parser *parser)
     return parser->tokens[parser->currentToken + 1];
 }
 
-Token advance(Parser *parser) // Returns the current token and moves the index forward by one
+// Returns the current token and moves the index forward by one
+Token advance(Parser *parser)
 {
     Token current = parser->tokens[parser->currentToken];
 
@@ -28,20 +29,21 @@ Token advance(Parser *parser) // Returns the current token and moves the index f
     return current;
 }
 
-Token expect(Parser *parser, TokenType type) // Calls advance but errors out if the token isn't the correct type
+// Calls advance but errors out if the token isn't the correct type
+Token expect(Parser *parser, TokenType type)
 {
     Token token = advance(parser);
 
     if (token.type != type)
     {
-        fprintf(stderr, "ERROR!\n Expected type: %s Got: %s\n", getTokenType(type), getTokenType(token.type));
-        printErrorLine(token);
-        exit(1);
+        char errorDescription[100];
+        sprintf(errorDescription, "Expected type: %s here, But found: %s\n instead.", getTokenType(type), getTokenType(token.type));
+        reportError(token, errorDescription);
     }
-
     return token;
 }
 
+// Parsing Functions
 struct AstNode *parseStatement(Parser *parser)
 {
     Token currentToken = peek(parser);
@@ -85,10 +87,11 @@ struct AstNode *parseStatement(Parser *parser)
 
     else
     {
-        fprintf(stderr, "ERROR!\n Unknown token in parseStatement at index %d: %s\n",
-                parser->currentToken, getTokenType(peek(parser).type));
-        printErrorLine(currentToken);
-        exit(1);
+
+        char errorDescription[100];
+        sprintf(errorDescription, "Unknown token in parseStatement: %s\n",
+                getTokenType(peek(parser).type));
+        reportError(currentToken, errorDescription);
     }
 }
 

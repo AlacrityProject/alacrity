@@ -179,3 +179,14 @@ print(x);
     - For loops
 
 * Implement arrays/lists
+
+---
+
+* Eventually add docstrings for all functions in ast.h to document the use of each function
+
+
+Notes for Myself:
+
+- -Wswitch warnings — the inner switches on operator.type inside performBinaryOp (and similar spots) don't handle every TokenType enum value, so the compiler warns about each unhandled case. Default cases catch the fallback logic, so these warnings are just noise but need to make sure all switch statements that operate on a TokenType has a default case.
+
+

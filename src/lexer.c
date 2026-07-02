@@ -11,7 +11,7 @@ char *readFile(char filename[])
     FILE *pFile = fopen(filename, "r");
     if (pFile == NULL)
     {
-        printf("ERROR OPENING FILE\n");
+        fprintf(stderr, "ERROR OPENING FILE %s\n", filename);
         return NULL;
     }
 
@@ -28,10 +28,6 @@ char *readFile(char filename[])
 
 void printErrorLine(Token token)
 {
-    // walk backwards from token.start to find line beginning
-    // walk forwards from token.start to find line end
-    // print the line number
-    // print the source line between those two points
 
     char *lineStart = token.value.start;
     while (lineStart > source && *(lineStart - 1) != '\n')
@@ -45,8 +41,14 @@ void printErrorLine(Token token)
         lineEnd++;
     }
 
-    fprintf(stderr, "Line %d:\n", token.line);
     fprintf(stderr, "   %.*s\n", (int)(lineEnd - lineStart), lineStart);
+}
+
+void reportError(Token token, char *errorDescription)
+{
+    fprintf(stderr, "Error [line %d]: %s\n", token.line, errorDescription);
+    printErrorLine(token);
+    exit(1);
 }
 
 int tokenize(char source[], Token tokens[])
@@ -373,6 +375,7 @@ int tokenize(char source[], Token tokens[])
     tokens[tokenCount].type = TOKEN_EOF;
     tokens[tokenCount].value.start = 0;
     tokens[tokenCount].value.length = 0;
+    tokens[tokenCount].line = currentLine;
 
     tokenCount++;
 

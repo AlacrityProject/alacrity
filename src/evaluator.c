@@ -119,6 +119,26 @@ void freeValue(Value value)
     }
 }
 
+char *getValueType(ValueType valueType)
+{
+
+    switch (valueType)
+    {
+    case TYPE_INT:
+        return "int";
+    case TYPE_FLOAT:
+        return "float";
+    case TYPE_BOOL:
+        return "bool";
+    case TYPE_STRING:
+        return "string";
+    case TYPE_NULL:
+        return "null";
+    default:
+        return "unknown";
+    }
+}
+
 Value performFloatBinaryOp(float leftFloat, float rightFloat, Token operator)
 {
     switch (operator.type)
@@ -144,9 +164,10 @@ Value performFloatBinaryOp(float leftFloat, float rightFloat, Token operator)
     case TOKEN_NOT_EQUAL_TO:
         return makeBoolValue(leftFloat != rightFloat);
     default:
-        fprintf(stderr, "ERROR\n");
-        printErrorLine(operator);
-        exit(1);
+        char *operatorName = getTokenType(operator.type);
+        char errorDescription[100];
+        sprintf(errorDescription, "Operator '%s' is not valid", operatorName);
+        reportError(operator, errorDescription);
     }
 }
 
@@ -224,9 +245,15 @@ Value performBinaryOp(Value left, Value right, Token operator)
         return performFloatBinaryOp(leftFloat, rightFloat, operator);
     }
 
-    fprintf(stderr, "ERROR\n");
-    printErrorLine(operator);
-    exit(1);
+    // Error handling
+
+    char *operatorName = getTokenType(operator.type);
+    char *leftType = getValueType(left.type);
+    char *rightType = getValueType(right.type);
+
+    char errorDescription[100];
+    sprintf(errorDescription, "Cannot apply operator '%s' to types '%s' and '%s'", operatorName, leftType, rightType);
+    reportError(operator, errorDescription);
 }
 
 Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, ReturnResult *result)
@@ -282,9 +309,9 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
 
             if (entry == NULL)
             {
-                fprintf(stderr, "ERROR!\n Cannot find entry for variable name: %s\n", name);
-                printErrorLine(ast->data.token);
-                exit(1);
+                char errorDescription[100];
+                sprintf(errorDescription, "Cannot find entry for variable name: %s\n", name);
+                reportError(ast->data.token, errorDescription);
             }
 
             return entry->value;
@@ -347,9 +374,9 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
             return expression;
         }
 
-        fprintf(stderr, "ERROR: Variable does not exist!");
-        printErrorLine(ast->data.assignment.name);
-        exit(1);
+        char errorDescription[100];
+        sprintf(errorDescription, "Variable does not exist!");
+        reportError(ast->data.assignment.name, errorDescription);
     }
 
     if (ast->type == NODE_PRINT)
@@ -441,9 +468,9 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
 
         if (entry == NULL)
         {
-            fprintf(stderr, "ERROR!\n Cannot find entry for variable name: %s\n", name);
-            printErrorLine(ast->data.incrementDecrement.variable);
-            exit(1);
+            char errorDescription[100];
+            sprintf(errorDescription, "Cannot find entry for variable name: %s\n", name);
+            reportError(ast->data.incrementDecrement.variable, errorDescription);
         }
 
         Value entryValue = entry->value;
@@ -482,9 +509,9 @@ Value evaluator(ASTNode *ast, SymbolTable *table, FunctionTable *functionTable, 
 
         if (functionEntry == NULL)
         {
-            fprintf(stderr, "ERROR!\n Cannot find function entry for function name: %s\n", name);
-            printErrorLine(ast->data.functionCall.name);
-            exit(1);
+            char errorDescription[100];
+            sprintf(errorDescription, "Cannot find function entry for function name: %s\n", name);
+            reportError(ast->data.functionCall.name, errorDescription);
         }
 
         SymbolTable localTable;

@@ -273,6 +273,7 @@ typedef struct
 // Lexer functions
 char *readFile(char filename[]);
 void printErrorLine(Token token);
+void reportError(Token token, char *errorDescription);
 int tokenize(char source[], Token tokens[]);
 int determine_identifier(char *token, int length, Keyword keywords[], int numberOfKeywords);
 
@@ -335,6 +336,7 @@ Value makeNullValue();
 
 bool isTruthy(Value value);
 void freeValue(Value value);
+char *getValueType(ValueType valueType);
 
 Value performFloatBinaryOp(float leftFloat, float rightFloat, Token operator);
 Value performBinaryOp(Value left, Value right, Token operator);
